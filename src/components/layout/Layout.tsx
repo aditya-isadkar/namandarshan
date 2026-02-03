@@ -1,0 +1,21 @@
+import React from 'react';
+import Header from './Header';
+import Footer from './Footer';
+
+interface LayoutProps {
+    children: React.ReactNode;
+}
+
+const Layout = ({ children }: LayoutProps) => {
+    return (
+        <div className="min-h-screen flex flex-col bg-stone-50">
+            <Header />
+            <main className="flex-grow pt-36 md:pt-40">
+                {children}
+            </main>
+            <Footer />
+        </div>
+    );
+};
+
+export default Layout;
