@@ -18,7 +18,7 @@ const blogs = [
     {
         title: "Ram Mandir Ayodhya: The 500-Year Wait Ends",
         excerpt: "The Grand Ram Mandir in Ayodhya is not just a structure of stone; it is a symbol of civilizational resilience, cultural revival, and the unwavering faith of a nation.",
-        image: "https://staging1.namandarshan.com/wp-content/uploads/2024/03/ram-mandir.webp",
+        image: "https://res.cloudinary.com/dryickpre/image/upload/v1770198268/WhatsApp_Image_2026-02-04_at_15.12.54_uyqvre.jpg",
         date: "22 January 2026",
         link: "/blog/ram-mandir-ayodhya-history-darshan-guide",
         readTime: "20 min read"
@@ -26,7 +26,7 @@ const blogs = [
     {
         title: "Tirupati Balaji: The Richest Temple & its Mysterious Legends",
         excerpt: "Perched atop the seven hills of Seshachalam, the Tirumala Venkateswara Temple is often called 'Kaliyuga Vaikuntha'. Discover the legends and debt to Kubera.",
-        image: "https://staging1.namandarshan.com/wp-content/uploads/2024/03/tirumala.jpg",
+        image: "https://res.cloudinary.com/dryickpre/image/upload/v1770198268/WhatsApp_Image_2026-02-04_at_15.13.27_dynuus.jpg",
         date: "24 January 2026",
         link: "/blog/tirupati-balaji-darshan-booking-laddu-mystery",
         readTime: "18 min read"
@@ -90,7 +90,7 @@ const blogs = [
     {
         title: "Shirdi Sai Baba Yatra",
         excerpt: "Embark on a spiritual journey to Shirdi, the abode of Sai Baba. A guide to the temple, darshan timings, and the peaceful atmosphere of Sai's home.",
-        image: "https://namandarshan.com/wp-content/uploads/2024/03/sai-baba-4-1.jpeg",
+        image: "https://res.cloudinary.com/dryickpre/image/upload/v1770198267/WhatsApp_Image_2026-02-04_at_15.05.09_o78rkp.jpg",
         date: "15 January 2026",
         link: "/blog/shirdi-yatra",
         readTime: "8 min read"

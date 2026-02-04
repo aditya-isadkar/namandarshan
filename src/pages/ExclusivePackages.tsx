@@ -47,7 +47,7 @@ const yatraPackages = [
     },
     {
         title: "Shirdi Yatra",
-        image: "https://namandarshan.com/wp-content/uploads/2024/03/sai-baba-4-1.jpeg",
+        image: "https://res.cloudinary.com/dryickpre/image/upload/v1770198267/WhatsApp_Image_2026-02-04_at_15.05.09_o78rkp.jpg",
         duration: "3 Days / 2 Nights",
         location: "Maharashtra",
         description: "Experience the divine presence of Sai Baba in Shirdi.",

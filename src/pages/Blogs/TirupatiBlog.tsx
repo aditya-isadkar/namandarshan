@@ -7,7 +7,7 @@ import { ChevronRight, Home } from "lucide-react";
 import CommentSection from "@/components/common/CommentSection";
 
 // Using the image URL directly as provided in the previous simple version
-const tirupatiImage = "https://staging1.namandarshan.com/wp-content/uploads/2024/03/tirumala.jpg";
+const tirupatiImage = "https://res.cloudinary.com/dryickpre/image/upload/v1770198268/WhatsApp_Image_2026-02-04_at_15.13.27_dynuus.jpg";
 
 const TirupatiBlog = () => {
     const tableOfContents = [

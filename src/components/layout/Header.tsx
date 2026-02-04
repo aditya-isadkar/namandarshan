@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search, Menu, X, User, CreditCard, LogOut } from "lucide-react";
 import namanLogo from "@/assets/naman.webp";
@@ -10,8 +10,20 @@ import GlobalSearch from "@/components/common/GlobalSearch";
 
 const Header = () => {
   const { isUserAuthenticated, logoutUser, user } = useAuth();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAtTop, setIsAtTop] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsAtTop(window.scrollY < window.innerHeight);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navLinks = [
     { name: "Yatra Packages", href: "/yatra" },
@@ -115,14 +127,24 @@ const Header = () => {
               <Link
                 key={link.name}
                 to={link.href}
-                className="text-primary-foreground/90 hover:text-primary-foreground font-medium transition-colors"
+                className={`font-medium transition-colors ${isAtTop
+                  ? (location.pathname === link.href
+                    ? "text-divine-blue font-semibold"
+                    : "text-primary-foreground hover:text-divine-blue")
+                  : "text-primary-foreground/90 hover:text-primary-foreground"
+                  }`}
               >
                 {link.name}
               </Link>
             ))}
             <Link
               to="/astro-naman"
-              className="text-primary-foreground/90 hover:text-primary-foreground font-medium transition-colors"
+              className={`font-medium transition-colors ${isAtTop
+                  ? (location.pathname === "/astro-naman"
+                    ? "text-divine-blue font-semibold"
+                    : "text-primary-foreground hover:text-divine-blue")
+                  : "text-primary-foreground/90 hover:text-primary-foreground"
+                }`}
             >
               Astro
             </Link>

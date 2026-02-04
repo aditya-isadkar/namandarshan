@@ -62,7 +62,7 @@ const ShirdiYatra = () => {
                 {/* Hero Section */}
                 <div className="relative h-[400px] md:h-[500px] w-full">
                     <img
-                        src="https://namandarshan.com/wp-content/uploads/2024/03/sai-baba-4-1.jpeg"
+                        src="https://res.cloudinary.com/dryickpre/image/upload/v1770198267/WhatsApp_Image_2026-02-04_at_15.05.09_o78rkp.jpg"
                         alt="Shirdi Sai Baba"
                         className="w-full h-full object-cover"
                     />

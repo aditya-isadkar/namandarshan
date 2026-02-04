@@ -13,14 +13,14 @@ const articles = [
         id: 2,
         title: "Ayodhya Darshan Guide",
         excerpt: "Tips for visiting Ram Mandir.",
-        image: "https://staging1.namandarshan.com/wp-content/uploads/2024/03/ram-mandir.webp",
+        image: "https://res.cloudinary.com/dryickpre/image/upload/v1770198268/WhatsApp_Image_2026-02-04_at_15.12.54_uyqvre.jpg",
         link: "/blog/ram-mandir-ayodhya-history-darshan-guide"
     },
     {
         id: 3,
         title: "Tirupati Booking Tips",
         excerpt: "How to book special darshan.",
-        image: "https://staging1.namandarshan.com/wp-content/uploads/2024/03/tirumala.jpg", // Using placeholder or tirupati if available
+        image: "https://res.cloudinary.com/dryickpre/image/upload/v1770198268/WhatsApp_Image_2026-02-04_at_15.13.27_dynuus.jpg", // Using placeholder or tirupati if available
         link: "/blog/tirupati-balaji-darshan-booking-laddu-mystery"
     }
 ];
