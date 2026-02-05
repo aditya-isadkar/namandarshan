@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import SEO from "@/components/SEO";
 import DarshanCard from "./components/DarshanCard";
 import { getApiUrl } from "@/utils/api";
-import { MousePointerClick, CalendarCheck, Ticket } from "lucide-react";
+import { MousePointerClick, CalendarCheck, Ticket, ArrowRight } from "lucide-react";
 import FilterBar from "@/components/common/FilterBar";
 
 interface DarshanTemple {
@@ -70,9 +71,30 @@ const Darshan = () => {
                 description="Book VIP darshan tickets for famous temples in India. Skip the line and get confirmed entry."
             />
             <Header />
-            <main className="flex-grow pt-48 pb-16">
+            <main className="flex-grow pt-28 md:pt-52 pb-16">
 
-                {/* Hero Section */}
+                {/* Cover Image Section */}
+                <div className="container mx-auto px-4 mb-12">
+                    <div className="relative w-full h-[180px] md:h-[250px] rounded-3xl overflow-hidden shadow-lg border border-orange-100 group">
+                        <img
+                            src="https://res.cloudinary.com/dryickpre/image/upload/v1770283579/WhatsApp_Image_2026-02-05_at_14.55.39_goqshj.jpg"
+                            alt="Darshan Cover"
+                            className="w-full h-full object-fill object-center transform group-hover:scale-105 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent group-hover:bg-black/10 transition-colors" />
+
+                        <div className="absolute bottom-4 left-[75%] -translate-x-1/2 md:bottom-6 z-20">
+                            <Link to="/mahashivratari">
+                                <button className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-1.5 px-6 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 text-xs md:text-sm backdrop-blur-md border border-white/20">
+                                    View Details
+                                    <ArrowRight className="w-4 h-4" />
+                                </button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Text Hero Section (Below Banner) */}
                 <div className="container mx-auto px-4 text-center mb-16 space-y-4">
                     <span className="inline-block py-1 px-3 rounded-full bg-orange-100 text-orange-700 text-sm font-semibold tracking-wide uppercase mb-2">
                         Skip the Queue

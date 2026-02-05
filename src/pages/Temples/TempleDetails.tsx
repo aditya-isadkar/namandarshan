@@ -213,12 +213,9 @@ const TempleDetails = () => {
                                     <h2 className="font-display text-3xl font-bold text-center mb-8 text-orange-600 italic">
                                         Historical background and Architectural splendor
                                     </h2>
-                                    <div className="flex flex-col md:flex-row gap-8 items-start">
-                                        <div className="flex-1 text-lg leading-relaxed text-muted-foreground">
-                                            {temple.historyArchitectureDesc}
-                                        </div>
+                                    <div className="clearfix">
                                         {temple.historyArchitectureImage && (
-                                            <div className="md:w-1/3 w-full shrink-0">
+                                            <div className="md:w-1/3 w-full md:float-right md:ml-8 mb-6">
                                                 <img
                                                     src={temple.historyArchitectureImage}
                                                     alt="Historical Architecture"
@@ -226,6 +223,9 @@ const TempleDetails = () => {
                                                 />
                                             </div>
                                         )}
+                                        <div className="text-lg leading-relaxed text-muted-foreground text-justify">
+                                            {temple.historyArchitectureDesc}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -235,12 +235,9 @@ const TempleDetails = () => {
                                     <h2 className="font-display text-3xl font-bold text-center mb-8 text-orange-600 italic">
                                         Religious Significance
                                     </h2>
-                                    <div className="flex flex-col md:flex-row gap-8 items-start">
-                                        <div className="flex-1 text-lg leading-relaxed text-muted-foreground">
-                                            {temple.religiousSignificanceDesc}
-                                        </div>
+                                    <div className="clearfix">
                                         {temple.religiousSignificanceImage && (
-                                            <div className="md:w-1/3 w-full shrink-0">
+                                            <div className="md:w-1/3 w-full md:float-right md:ml-8 mb-6">
                                                 <img
                                                     src={temple.religiousSignificanceImage}
                                                     alt="Religious Significance"
@@ -248,6 +245,9 @@ const TempleDetails = () => {
                                                 />
                                             </div>
                                         )}
+                                        <div className="text-lg leading-relaxed text-muted-foreground text-justify">
+                                            {temple.religiousSignificanceDesc}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -257,12 +257,9 @@ const TempleDetails = () => {
                                     <h2 className="font-display text-3xl font-bold text-center mb-8 text-orange-600 italic">
                                         Festival and Celebrations
                                     </h2>
-                                    <div className="flex flex-col md:flex-row-reverse gap-8 items-start">
-                                        <div className="flex-1 text-lg leading-relaxed text-muted-foreground">
-                                            {temple.festivalCelebrationsDesc}
-                                        </div>
+                                    <div className="clearfix">
                                         {temple.festivalCelebrationsImage && (
-                                            <div className="md:w-1/3 w-full shrink-0">
+                                            <div className="md:w-1/3 w-full md:float-right md:ml-8 mb-6">
                                                 <img
                                                     src={temple.festivalCelebrationsImage}
                                                     alt="Festival and Celebrations"
@@ -270,6 +267,9 @@ const TempleDetails = () => {
                                                 />
                                             </div>
                                         )}
+                                        <div className="text-lg leading-relaxed text-muted-foreground text-justify">
+                                            {temple.festivalCelebrationsDesc}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -331,13 +331,7 @@ const TempleDetails = () => {
                         >
                             <h3 className="font-display text-2xl font-bold mb-6">Visitor Information</h3>
 
-                            <Button
-                                size="lg"
-                                className="w-full text-lg font-bold shadow-lg hover:shadow-xl transition-all mb-6"
-                                onClick={() => setIsBookingOpen(true)}
-                            >
-                                Book VIP Darshan
-                            </Button>
+
 
                             {temple.liveDarshanUrl && (
                                 <a
@@ -403,9 +397,18 @@ const TempleDetails = () => {
                                         <div className="w-full">
                                             <p className="font-semibold mb-1">Connectivity:</p>
                                             <div className="text-sm text-muted-foreground space-y-2">
-                                                {temple.connectivity.split('\n').map((line: string, index: number) => (
-                                                    line.trim() && <p key={index}>{line}</p>
-                                                ))}
+                                                {temple.connectivity.split('\n').filter((l: string) => l.trim()).map((line: string, index: number) => {
+                                                    const parts = line.split(':');
+                                                    if (parts.length > 1) {
+                                                        return (
+                                                            <p key={index}>
+                                                                <span className="font-bold text-gray-900">{parts[0]}:</span>
+                                                                {parts.slice(1).join(':')}
+                                                            </p>
+                                                        );
+                                                    }
+                                                    return <p key={index}>{line}</p>;
+                                                })}
                                             </div>
                                         </div>
                                     </div>

@@ -114,7 +114,7 @@ const Astro = () => {
                             <div className="w-full md:w-auto flex justify-center md:justify-end">
                                 <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full border-4 border-white/20 overflow-hidden shadow-2xl shrink-0">
                                     <img
-                                        src="/assets/kedarnath.jpg"
+                                        src="https://res.cloudinary.com/dryickpre/image/upload/v1770286890/WhatsApp_Image_2026-02-05_at_15.50.29_hog5dq.jpg"
                                         alt="Temple"
                                         className="w-full h-full object-cover"
                                     />
