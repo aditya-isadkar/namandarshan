@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { getApiUrl } from "@/utils/api";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -18,8 +17,6 @@ interface Message {
 }
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const ADMIN_EMAIL = "sayanmullick4@gmail.com";
-
 const AiYatraPlanner = () => {
     const [messages, setMessages] = useState<Message[]>([
         { role: "assistant", content: "Hari Om! I am your AI Yatra Assistant. Tell me which spiritual destinations you wish to visit (e.g., Kedarnath, Kashi, Tirupati), how many days you have, and your starting point. I will plan the perfect divine itinerary for you." }
@@ -87,7 +84,7 @@ const AiYatraPlanner = () => {
         }
     };
 
-    const handleBookingSubmit = async (e: React.FormEvent) => {
+    const handleBookingSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // Validate
         if (!bookingData.name || !bookingData.phone) {
@@ -95,58 +92,11 @@ const AiYatraPlanner = () => {
             return;
         }
 
-        setIsLoading(true);
-
-        // Prepare Payload
-        const lastItinerary = messages[messages.length - 1].role === "assistant" ? messages[messages.length - 1].content : "No itinerary generated yet.";
-
-        const bookingPayload = {
-            type: "ai_planner",
-            serviceName: "AI Yatra Itinerary Request",
-            userDetails: {
-                name: bookingData.name,
-                email: bookingData.email,
-                whatsapp: bookingData.phone,
-            },
-            bookingDetails: {
-                date: bookingData.startDate,
-                persons: parseInt(bookingData.travelers) || 1,
-                message: `Generated Itinerary:\n${lastItinerary.substring(0, 2000)}...` // Increase limit for itinerary
-            },
-            // Email Notification Fields
-            sendEmail: true,
-            recipients: [bookingData.email, ADMIN_EMAIL].filter(Boolean) // User + Admin
-        };
-
-        try {
-            // 1. Submit to Backend
-            const res = await fetch(getApiUrl("/api/bookings"), {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(bookingPayload)
-            });
-
-            if (res.ok) {
-                toast.success("Yatra Request Received! Check your email for details.");
-
-                // 2. Redirect to WhatsApp
-                const whatsappMessage = `Namaste 🙏\n\nI want to book a Custom Yatra based on AI Plan.\n\n*Name:* ${bookingData.name}\n*Phone:* ${bookingData.phone}\n*Travelers:* ${bookingData.travelers}\n*Date:* ${bookingData.startDate}\n\n*Proposed Itinerary:*\n${lastItinerary.substring(0, 500)}...\n\n(Full itinerary sent via email)\n\nPlease guide me further.`;
-
-                const whatsappLink = `https://api.whatsapp.com/send/?phone=919311973199&text=${encodeURIComponent(whatsappMessage)}&type=phone_number&app_absent=0`;
-                window.open(whatsappLink, "_blank");
-
-                // Reset and Close
-                setIsBookingOpen(false);
-                setBookingData({ name: "", phone: "", email: "", startDate: "", travelers: "" });
-            } else {
-                toast.error("Failed to submit booking. Please try again.");
-            }
-        } catch (error) {
-            console.error("Booking Error:", error);
-            toast.error("Something went wrong. Please check your connection.");
-        } finally {
-            setIsLoading(false);
-        }
+        // Mock Submission
+        console.log("Booking Request:", { ...bookingData, itinerary: messages[messages.length - 1].content });
+        toast.success("Yatra Request Received! Our team will contact you shortly to finalize your divine journey.");
+        setIsBookingOpen(false);
+        setBookingData({ name: "", phone: "", email: "", startDate: "", travelers: "" });
     };
 
     return (
