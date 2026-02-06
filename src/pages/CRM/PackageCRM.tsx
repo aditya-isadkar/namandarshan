@@ -15,8 +15,13 @@ import { useToast } from "@/hooks/use-toast";
 import PackageTable from "./components/PackageTable";
 import PackageFormModal from "./components/PackageFormModal";
 import CRMSidebar from "./components/CRMSidebar";
+import CRMHeader from "./components/CRMHeader";
 import LeadDetailsModal from "./components/LeadDetailsModal";
 import { useNavigate } from "react-router-dom";
+import { useSidebar } from "@/hooks/useSidebar";
+
+import { DateRangeFilter } from "./components/DateRangeFilter";
+import { DateRange } from "react-day-picker";
 
 const PackageCRM = () => {
     const navigate = useNavigate();
@@ -28,11 +33,18 @@ const PackageCRM = () => {
     const [statusFilter, setStatusFilter] = useState("all");
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedPackage, setSelectedPackage] = useState(null);
-    const [autoRefresh, setAutoRefresh] = useState(false);
+    const [autoRefresh, setAutoRefresh] = useState(true);
     const [refreshInterval, setRefreshInterval] = useState(30);
     const [countdown, setCountdown] = useState(30);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [viewLead, setViewLead] = useState(null);
+    const { isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebar();
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>({ key: "createdAt", direction: "desc" });
+    const [assignedToFilter, setAssignedToFilter] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 50, pages: 1 });
 
     useEffect(() => {
         const crmUser = localStorage.getItem("crmUser");
@@ -53,14 +65,24 @@ const PackageCRM = () => {
         try {
             const params = new URLSearchParams();
             params.append("type", "package");
+            params.append("page", page.toString());
+            params.append("limit", "50");
             if (searchTerm) params.append("search", searchTerm);
             if (statusFilter !== "all") params.append("status", statusFilter);
+            if (assignedToFilter) params.append("assignedTo", assignedToFilter);
+            if (dateRange?.from) params.append("dateFrom", dateRange.from.toISOString());
+            if (dateRange?.to) params.append("dateTo", dateRange.to.toISOString());
+            if (sortConfig) {
+                params.append("sort", `${sortConfig.direction === "desc" ? "-" : ""}${sortConfig.key}`);
+            }
 
             const response = await fetch(getApiUrl(`/api/crm/bookings?${params}`));
             const data = await response.json();
 
             if (data.success) {
                 setPackages(data.data);
+                setTotalPages(data.pagination?.pages || 1);
+                if (data.pagination) setPagination(data.pagination);
             }
         } catch (error) {
             console.error("Error:", error);
@@ -74,7 +96,7 @@ const PackageCRM = () => {
         }
     };
 
-    useEffect(() => { if (user) fetchPackages(); }, [user]);
+    useEffect(() => { if (user) fetchPackages(); }, [user, page, sortConfig]);
 
     useEffect(() => {
         if (!autoRefresh) return;
@@ -89,6 +111,15 @@ const PackageCRM = () => {
         }, 1000);
         return () => clearInterval(timer);
     }, [autoRefresh, refreshInterval]);
+
+    const handleSort = (key: string) => {
+        setSortConfig((current) => {
+            if (current?.key === key) {
+                return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+            }
+            return { key, direction: "desc" };
+        });
+    };
 
     const handleExportCSV = () => {
         const csvData = packages.map((pkg) => ({
@@ -114,9 +145,17 @@ const PackageCRM = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {user && <CRMSidebar user={user} onLogout={handleLogout} />}
+            {user && (
+                <CRMSidebar
+                    user={user}
+                    onLogout={handleLogout}
+                    isOpen={isSidebarOpen}
+                    onToggle={toggleSidebar}
+                />
+            )}
 
-            <div className="lg:pl-64">
+            <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-64" : "lg:pl-0"}`}>
+                <CRMHeader toggleSidebar={toggleSidebar} user={user} />
                 <div className="bg-gradient-to-r from-green-600 to-green-500 text-white p-6">
                     <div>
                         <h1 className="text-3xl font-bold">🌄 Package CRM</h1>
@@ -150,6 +189,14 @@ const PackageCRM = () => {
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            <Input
+                                placeholder="Assigned To..."
+                                value={assignedToFilter}
+                                onChange={(e) => setAssignedToFilter(e.target.value)}
+                                className="bg-white"
+                            />
+                            <DateRangeFilter date={dateRange} setDate={setDateRange} className="bg-white" />
 
                             <Button onClick={fetchPackages} className="bg-green-600 hover:bg-green-700">
                                 <Search className="w-4 h-4 mr-2" />
@@ -220,7 +267,35 @@ const PackageCRM = () => {
                             setSelectedPackage(pkg);
                             setIsFormOpen(true);
                         }}
+                        sortConfig={sortConfig}
+                        onSort={handleSort}
+                        pagination={pagination}
                     />
+
+                    {/* Pagination Controls */}
+                    <div className="flex items-center justify-between px-4 py-3 border-t bg-white rounded-b-lg">
+                        <div className="text-sm text-gray-500">
+                            Page {page} of {totalPages}
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1 || isLoading}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages || isLoading}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </div>
 
                     {isFormOpen && (
                         <PackageFormModal

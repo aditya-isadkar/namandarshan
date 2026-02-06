@@ -9,7 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RefreshCw, Plus, Search } from "lucide-react";
 import LeadFormModal from "./components/LeadFormModal";
 import CRMSidebar from "./components/CRMSidebar";
+import CRMHeader from "./components/CRMHeader";
 import LeadDetailsModal from "./components/LeadDetailsModal";
+
+import { useSidebar } from "@/hooks/useSidebar";
+
+import { DateRangeFilter } from "./components/DateRangeFilter";
+import { DateRange } from "react-day-picker";
 
 const PujaCRM = () => {
     const navigate = useNavigate();
@@ -23,6 +29,15 @@ const PujaCRM = () => {
     const [selectedLead, setSelectedLead] = useState(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [viewLead, setViewLead] = useState(null);
+    const { isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebar();
+
+    // Auto-refresh state
+    const [autoRefresh, setAutoRefresh] = useState(true);
+    const [refreshInterval, setRefreshInterval] = useState(30);
+    const [countdown, setCountdown] = useState(30);
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>({ key: "createdAt", direction: "desc" });
+    const [assignedToFilter, setAssignedToFilter] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
     useEffect(() => {
         const crmUser = localStorage.getItem("crmUser");
@@ -35,7 +50,19 @@ const PujaCRM = () => {
 
     useEffect(() => {
         if (user) fetchLeads();
-    }, [user]);
+    }, [user, sortConfig]);
+
+    // Keep selected lead in sync with fetched leads
+    useEffect(() => {
+        if (selectedLead) {
+            const updated = leads.find((l: any) => l._id === selectedLead._id || l.leadId === selectedLead.leadId);
+            if (updated) setSelectedLead(updated);
+        }
+        if (viewLead) {
+            const updated = leads.find((l: any) => l._id === viewLead._id || l.leadId === viewLead.leadId);
+            if (updated) setViewLead(updated);
+        }
+    }, [leads]);
 
     const fetchLeads = async () => {
         setIsLoading(true);
@@ -44,6 +71,12 @@ const PujaCRM = () => {
             params.append("type", "puja");
             if (searchTerm) params.append("search", searchTerm);
             if (statusFilter !== "all") params.append("status", statusFilter);
+            if (assignedToFilter) params.append("assignedTo", assignedToFilter);
+            if (dateRange?.from) params.append("dateFrom", dateRange.from.toISOString());
+            if (dateRange?.to) params.append("dateTo", dateRange.to.toISOString());
+            if (sortConfig) {
+                params.append("sort", `${sortConfig.direction === "desc" ? "-" : ""}${sortConfig.key}`);
+            }
 
             const response = await fetch(getApiUrl(`/api/crm/bookings?${params}`));
             const data = await response.json();
@@ -71,11 +104,33 @@ const PujaCRM = () => {
         return colors[status] || "bg-gray-100 text-gray-800";
     };
 
+    const handleSort = (key: string) => {
+        setSortConfig((current) => {
+            if (current?.key === key) {
+                return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+            }
+            return { key, direction: "desc" };
+        });
+    };
+
+    const renderSortIcon = (key: string) => {
+        if (!sortConfig || sortConfig.key !== key) return null;
+        return sortConfig.direction === "asc" ? " ↑" : " ↓";
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
-            {user && <CRMSidebar user={user} onLogout={handleLogout} />}
+            {user && (
+                <CRMSidebar
+                    user={user}
+                    onLogout={handleLogout}
+                    isOpen={isSidebarOpen}
+                    onToggle={toggleSidebar}
+                />
+            )}
 
-            <div className="lg:pl-64">
+            <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-64" : "lg:pl-0"}`}>
+                <CRMHeader toggleSidebar={toggleSidebar} user={user} />
                 <div className="bg-gradient-to-r from-amber-600 to-amber-500 text-white p-6">
                     <div>
                         <h1 className="text-3xl font-bold">🔔 Puja CRM</h1>
@@ -108,6 +163,13 @@ const PujaCRM = () => {
                                     <SelectItem value="lost">Lost</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Input
+                                placeholder="Assigned To..."
+                                value={assignedToFilter}
+                                onChange={(e) => setAssignedToFilter(e.target.value)}
+                                className="bg-white"
+                            />
+                            <DateRangeFilter date={dateRange} setDate={setDateRange} className="bg-white" />
                             <Button onClick={fetchLeads} disabled={isLoading} className="bg-amber-600 hover:bg-amber-700">
                                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
                                 {isLoading ? "Loading..." : "Search"}
@@ -123,16 +185,16 @@ const PujaCRM = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>CREATED AT</TableHead>
-                                    <TableHead>Name</TableHead>
+                                    <TableHead onClick={() => handleSort("leadId")} className="cursor-pointer hover:bg-gray-100">ID{renderSortIcon("leadId")}</TableHead>
+                                    <TableHead onClick={() => handleSort("createdAt")} className="cursor-pointer hover:bg-gray-100">CREATED AT{renderSortIcon("createdAt")}</TableHead>
+                                    <TableHead onClick={() => handleSort("userDetails.name")} className="cursor-pointer hover:bg-gray-100">Name{renderSortIcon("userDetails.name")}</TableHead>
                                     <TableHead>Mobile</TableHead>
-                                    <TableHead>Temple</TableHead>
-                                    <TableHead>Puja Type</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Next Action</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    <TableHead onClick={() => handleSort("serviceName")} className="cursor-pointer hover:bg-gray-100">Temple{renderSortIcon("serviceName")}</TableHead>
+                                    <TableHead onClick={() => handleSort("bookingDetails.darshanType")} className="cursor-pointer hover:bg-gray-100">Puja Type{renderSortIcon("bookingDetails.darshanType")}</TableHead>
+                                    <TableHead onClick={() => handleSort("bookingDetails.date")} className="cursor-pointer hover:bg-gray-100">Date{renderSortIcon("bookingDetails.date")}</TableHead>
+                                    <TableHead onClick={() => handleSort("bookingDetails.amount")} className="cursor-pointer hover:bg-gray-100">Amount{renderSortIcon("bookingDetails.amount")}</TableHead>
+                                    <TableHead onClick={() => handleSort("nextAction.actionDate")} className="cursor-pointer hover:bg-gray-100">Next Action{renderSortIcon("nextAction.actionDate")}</TableHead>
+                                    <TableHead onClick={() => handleSort("status")} className="cursor-pointer hover:bg-gray-100">Status{renderSortIcon("status")}</TableHead>
                                     <TableHead>Action</TableHead>
                                 </TableRow>
                             </TableHeader>

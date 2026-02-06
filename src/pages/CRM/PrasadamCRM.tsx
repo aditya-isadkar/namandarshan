@@ -9,7 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RefreshCw, Plus, Search } from "lucide-react";
 import LeadFormModal from "./components/LeadFormModal";
 import CRMSidebar from "./components/CRMSidebar";
+import CRMHeader from "./components/CRMHeader";
 import LeadDetailsModal from "./components/LeadDetailsModal";
+
+import { useSidebar } from "@/hooks/useSidebar";
+
+import { DateRangeFilter } from "./components/DateRangeFilter";
+import { DateRange } from "react-day-picker";
 
 const PrasadamCRM = () => {
     const navigate = useNavigate();
@@ -23,6 +29,15 @@ const PrasadamCRM = () => {
     const [selectedLead, setSelectedLead] = useState(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [viewLead, setViewLead] = useState(null);
+    const { isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebar();
+
+    // Auto-refresh state
+    const [autoRefresh, setAutoRefresh] = useState(true);
+    const [refreshInterval, setRefreshInterval] = useState(30);
+    const [countdown, setCountdown] = useState(30);
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>({ key: "createdAt", direction: "desc" });
+    const [assignedToFilter, setAssignedToFilter] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
     useEffect(() => {
         const crmUser = localStorage.getItem("crmUser");
@@ -35,7 +50,7 @@ const PrasadamCRM = () => {
 
     useEffect(() => {
         if (user) fetchLeads();
-    }, [user]);
+    }, [user, sortConfig]);
 
     const fetchLeads = async () => {
         setIsLoading(true);
@@ -44,11 +59,30 @@ const PrasadamCRM = () => {
             params.append("type", "prasadam");
             if (searchTerm) params.append("search", searchTerm);
             if (statusFilter !== "all") params.append("status", statusFilter);
+            if (assignedToFilter) params.append("assignedTo", assignedToFilter);
+            if (dateRange?.from) params.append("dateFrom", dateRange.from.toISOString());
+            if (dateRange?.to) params.append("dateTo", dateRange.to.toISOString());
+            if (sortConfig) {
+                params.append("sort", `${sortConfig.direction === "desc" ? "-" : ""}${sortConfig.key}`);
+            }
 
-            const response = await fetch(getApiUrl(`/api/crm/bookings?${params}`));
+            const response = await fetch(getApiUrl(`/api/orders?${params}`), {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-user-id": user.userId || user.id || user._id
+                }
+            });
             const data = await response.json();
-            if (data.success) setLeads(data.data);
+
+            if (data.success) {
+                setLeads(data.data);
+            } else {
+                console.error("Fetch failed:", data);
+                // Fallback to empty if success is false but no error thrown
+                setLeads([]);
+            }
         } catch (error) {
+            console.error("Error fetching leads:", error);
             toast({ variant: "destructive", title: "Error", description: "Failed to fetch prasadam orders" });
         } finally {
             setIsLoading(false);
@@ -62,20 +96,42 @@ const PrasadamCRM = () => {
 
     const getStatusColor = (status: string) => {
         const colors: any = {
-            new: "bg-blue-100 text-blue-800",
-            contacted: "bg-yellow-100 text-yellow-800",
-            "follow-up": "bg-purple-100 text-purple-800",
-            converted: "bg-green-100 text-green-800",
-            lost: "bg-red-100 text-red-800"
+            pending: "bg-blue-100 text-blue-800",
+            confirmed: "bg-yellow-100 text-yellow-800",
+            shipped: "bg-purple-100 text-purple-800",
+            delivered: "bg-green-100 text-green-800",
+            cancelled: "bg-red-100 text-red-800"
         };
         return colors[status] || "bg-gray-100 text-gray-800";
     };
 
+    const handleSort = (key: string) => {
+        setSortConfig((current) => {
+            if (current?.key === key) {
+                return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+            }
+            return { key, direction: "desc" };
+        });
+    };
+
+    const renderSortIcon = (key: string) => {
+        if (!sortConfig || sortConfig.key !== key) return null;
+        return sortConfig.direction === "asc" ? " ↑" : " ↓";
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
-            {user && <CRMSidebar user={user} onLogout={handleLogout} />}
+            {user && (
+                <CRMSidebar
+                    user={user}
+                    onLogout={handleLogout}
+                    isOpen={isSidebarOpen}
+                    onToggle={toggleSidebar}
+                />
+            )}
 
-            <div className="lg:pl-64">
+            <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-64" : "lg:pl-0"}`}>
+                <CRMHeader toggleSidebar={toggleSidebar} user={user} />
                 <div className="bg-gradient-to-r from-lime-600 to-lime-500 text-white p-6">
                     <div>
                         <h1 className="text-3xl font-bold">🍜 Prasadam CRM</h1>
@@ -101,13 +157,20 @@ const PrasadamCRM = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="new">New</SelectItem>
-                                    <SelectItem value="contacted">Contacted</SelectItem>
-                                    <SelectItem value="follow-up">Follow-up</SelectItem>
-                                    <SelectItem value="converted">Converted</SelectItem>
-                                    <SelectItem value="lost">Lost</SelectItem>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                                    <SelectItem value="shipped">Shipped</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Input
+                                placeholder="Assigned To..."
+                                value={assignedToFilter}
+                                onChange={(e) => setAssignedToFilter(e.target.value)}
+                                className="bg-white"
+                            />
+                            <DateRangeFilter date={dateRange} setDate={setDateRange} className="bg-white" />
                             <Button onClick={fetchLeads} disabled={isLoading} className="bg-lime-600 hover:bg-lime-700">
                                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
                                 {isLoading ? "Loading..." : "Search"}
@@ -123,16 +186,14 @@ const PrasadamCRM = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>CREATED AT</TableHead>
-                                    <TableHead>Name</TableHead>
+                                    <TableHead onClick={() => handleSort("_id")} className="cursor-pointer hover:bg-gray-100">ID{renderSortIcon("_id")}</TableHead>
+                                    <TableHead onClick={() => handleSort("createdAt")} className="cursor-pointer hover:bg-gray-100">CREATED AT{renderSortIcon("createdAt")}</TableHead>
+                                    <TableHead onClick={() => handleSort("userDetails.name")} className="cursor-pointer hover:bg-gray-100">Name{renderSortIcon("userDetails.name")}</TableHead>
                                     <TableHead>Mobile</TableHead>
-                                    <TableHead>Temple</TableHead>
-                                    <TableHead>Prasadam Type</TableHead>
+                                    <TableHead onClick={() => handleSort("prasadamTitle")} className="cursor-pointer hover:bg-gray-100">Prasadam{renderSortIcon("prasadamTitle")}</TableHead>
                                     <TableHead>Quantity</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Next Action</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    <TableHead onClick={() => handleSort("totalAmount")} className="cursor-pointer hover:bg-gray-100">Amount{renderSortIcon("totalAmount")}</TableHead>
+                                    <TableHead onClick={() => handleSort("status")} className="cursor-pointer hover:bg-gray-100">Status{renderSortIcon("status")}</TableHead>
                                     <TableHead>Action</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -152,20 +213,9 @@ const PrasadamCRM = () => {
                                             </TableCell>
                                             <TableCell className="font-medium">{lead.userDetails?.name || "N/A"}</TableCell>
                                             <TableCell>{lead.userDetails?.mobile || lead.userDetails?.whatsapp || "N/A"}</TableCell>
-                                            <TableCell>{lead.serviceName || "N/A"}</TableCell>
-                                            <TableCell>{lead.bookingDetails?.darshanType || lead.type || "Standard Prasadam"}</TableCell>
-                                            <TableCell>{lead.bookingDetails?.numberOfDevotees || lead.bookingDetails?.quantity || "1"}</TableCell>
-                                            <TableCell className="font-semibold">₹{lead.bookingDetails?.amount || 0}</TableCell>
-                                            <TableCell>
-                                                {lead.nextAction?.actionDate ? (
-                                                    <div className="text-sm">
-                                                        <div className="font-medium text-blue-600">{new Date(lead.nextAction.actionDate).toLocaleDateString('en-IN')}</div>
-                                                        <div className="text-xs text-gray-500 capitalize">{lead.nextAction.actionType?.replace('-', ' ')}</div>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-sm text-gray-400">-</span>
-                                                )}
-                                            </TableCell>
+                                            <TableCell>{lead.prasadamTitle || "N/A"}</TableCell>
+                                            <TableCell>{lead.quantity || "1"}</TableCell>
+                                            <TableCell className="font-semibold">₹{lead.totalAmount || 0}</TableCell>
                                             <TableCell>
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.status)}`}>
                                                     {(lead.status || 'pending').toUpperCase()}

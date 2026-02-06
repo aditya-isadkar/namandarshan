@@ -87,124 +87,124 @@ import PrasadamCRM from "./pages/CRM/PrasadamCRM";
 
 const queryClient = new QueryClient();
 
+import { ThemeProvider } from "./components/theme-provider";
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <FloatingActionButtons />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/exclusive-temple-darshan-packeges" element={<ExclusivePackages />} />
-              <Route path="/referral" element={<Referral />} />
-              <Route path="/ai-yatra-planner" element={<AiYatraPlanner />} />
-              <Route path="/yatra" element={<Yatra />} />
-              <Route path="/shirdi-yatra" element={<ShirdiYatra />} />
-              <Route path="/char-dham-yatra" element={<CharDhamYatra />} />
-              <Route path="/kedarnath-yatra" element={<KedarnathYatra />} />
-              <Route path="/ayodhya-yatra" element={<AyodhyaYatra />} />
-              <Route path="/vrindavan-yatra" element={<VrindavanYatra />} />
-              <Route path="/jagannath-yatra" element={<JagannathYatra />} />
-              <Route path="/temples" element={<Temples />} />
-              <Route path="/temples/:slug" element={<TempleDetails />} />
-              <Route path="/darshan" element={<Darshan />} />
-              <Route path="/darshan/:slug" element={<DarshanBookingPage />} />
-              <Route path="/puja" element={<Puja />} />
-              <Route path="/puja/:slug" element={<PujaDetails />} />
+        <ThemeProvider defaultTheme="smart" storageKey="vite-ui-theme">
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <FloatingActionButtons />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/exclusive-temple-darshan-packeges" element={<ExclusivePackages />} />
+                <Route path="/referral" element={<Referral />} />
+                <Route path="/ai-yatra-planner" element={<AiYatraPlanner />} />
+                <Route path="/yatra" element={<Yatra />} />
+                <Route path="/shirdi-yatra" element={<ShirdiYatra />} />
+                <Route path="/char-dham-yatra" element={<CharDhamYatra />} />
+                <Route path="/kedarnath-yatra" element={<KedarnathYatra />} />
+                <Route path="/ayodhya-yatra" element={<AyodhyaYatra />} />
+                <Route path="/vrindavan-yatra" element={<VrindavanYatra />} />
+                <Route path="/jagannath-yatra" element={<JagannathYatra />} />
+                <Route path="/temples" element={<Temples />} />
+                <Route path="/temples/:slug" element={<TempleDetails />} />
+                <Route path="/darshan" element={<Darshan />} />
+                <Route path="/darshan/:slug" element={<DarshanBookingPage />} />
+                <Route path="/puja" element={<Puja />} />
+                <Route path="/puja/:slug" element={<PujaDetails />} />
 
-              <Route path="/puja/booking" element={<PujaBooking />} />
-              <Route path="/prasadam" element={<Prasadam />} />
-              <Route path="/prasadam/:slug" element={<PrasadamDetails />} />
-              <Route path="/chadhava" element={<Chadhava />} />
-              <Route path="/chadhava/:slug" element={<ChadhavaDetails />} />
+                <Route path="/puja/booking" element={<PujaBooking />} />
+                <Route path="/prasadam" element={<Prasadam />} />
+                <Route path="/prasadam/:slug" element={<PrasadamDetails />} />
+                <Route path="/chadhava" element={<Chadhava />} />
+                <Route path="/chadhava/:slug" element={<ChadhavaDetails />} />
 
-              <Route path="/astro-naman" element={<Astro />} />
-              <Route path="/live-darshan" element={<LiveDarshan />} />
-              <Route path="/live-darshan/:slug" element={<LiveDarshanDetail />} />
-
-              <Route element={<ProtectedRoute authType="user" redirectPath="/login" />}>
+                <Route path="/astro-naman" element={<Astro />} />
+                <Route path="/live-darshan" element={<LiveDarshan />} />
+                <Route path="/live-darshan/:slug" element={<LiveDarshanDetail />} />
                 <Route path="/my-trips" element={<MyTrips />} />
-              </Route>
-              <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<Login />} />
+                {/* Blog Routes */}
+                <Route path="/blogs" element={<Blogs />} />
+                <Route path="/blog" element={<Blogs />} />
+                <Route path="/blog/shirdi-yatra" element={<ShirdiYatra />} />
+                <Route path="/blogs/legend-of-kedarnath" element={<KedarnathLegend />} />
+                <Route path="/blogs/mysteries-of-jagannath-puri" element={<JagannathMystery />} />
+                <Route path="/blog/kedarnath-temple-yatra-history-legend" element={<KedarnathBlog />} />
+                <Route path="/blog/ram-mandir-ayodhya-history-darshan-guide" element={<RamMandirBlog />} />
+                <Route path="/blog/tirupati-balaji-darshan-booking-laddu-mystery" element={<TirupatiBlog />} />
+                {/* New Blogs */}
+                <Route path="/blog/golden-temple-amritsar-history-langar-guide" element={<GoldenTempleBlog />} />
+                <Route path="/blog/chardham-yatra-medical-tips-packing-guide" element={<ChardhamBlog />} />
+                <Route path="/blog/kashi-vishwanath-moksha-ganga-aarti-guide" element={<KashiBlog />} />
+                <Route path="/blog/mahakaleshwar-ujjain-jyotirlinga-bhasma-aarti" element={<MahakaleshwarBlog />} />
+                <Route path="/blog/shirdi-sai-baba-11-vachan-promises-meaning" element={<ShirdiPromisesBlog />} />
+                {/* CRM Routes */}
+                <Route path="/crm" element={<CRMLogin />} />
+                <Route path="/crm/dashboard" element={<CRMDashboard />} />
+                <Route path="/crm/admin" element={<AdminPanel />} />
+                <Route path="/crm/team-stats" element={<TeamStats />} />
+                <Route path="/crm/blast-mail" element={<BlastMail />} />
+                <Route path="/crm/darshan" element={<DarshanCRM />} />
+                <Route path="/crm/astro" element={<AstroCRM />} />
+                <Route path="/crm/package" element={<PackageCRM />} />
+                <Route path="/crm/inquiry" element={<InquiryCRM />} />
+                {/* Ops Routes */}
+                <Route path="/ops" element={<Navigate to="/ops/login" replace />} />
+                <Route path="/ops/login" element={<OpsLogin />} />
+                <Route path="/ops/dashboard" element={<OpsCRM />} />
+                <Route path="/crm/chadhawa" element={<ChadhawaCRM />} />
+                <Route path="/crm/puja" element={<PujaCRM />} />
+                <Route path="/crm/prasadam" element={<PrasadamCRM />} />
 
-              {/* Blog Routes */}
-              <Route path="/blogs" element={<Blogs />} />
-              <Route path="/blog" element={<Blogs />} />
-              <Route path="/blog/shirdi-yatra" element={<ShirdiYatra />} />
-              <Route path="/blogs/legend-of-kedarnath" element={<KedarnathLegend />} />
-              <Route path="/blogs/mysteries-of-jagannath-puri" element={<JagannathMystery />} />
-              <Route path="/blog/kedarnath-temple-yatra-history-legend" element={<KedarnathBlog />} />
-              <Route path="/blog/ram-mandir-ayodhya-history-darshan-guide" element={<RamMandirBlog />} />
-              <Route path="/blog/tirupati-balaji-darshan-booking-laddu-mystery" element={<TirupatiBlog />} />
-
-              {/* New Blogs */}
-              <Route path="/blog/golden-temple-amritsar-history-langar-guide" element={<GoldenTempleBlog />} />
-              <Route path="/blog/chardham-yatra-medical-tips-packing-guide" element={<ChardhamBlog />} />
-              <Route path="/blog/kashi-vishwanath-moksha-ganga-aarti-guide" element={<KashiBlog />} />
-              <Route path="/blog/mahakaleshwar-ujjain-jyotirlinga-bhasma-aarti" element={<MahakaleshwarBlog />} />
-              <Route path="/blog/shirdi-sai-baba-11-vachan-promises-meaning" element={<ShirdiPromisesBlog />} />
-              {/* CRM Routes */}
-              <Route path="/crm" element={<CRMLogin />} />
-              <Route path="/crm/dashboard" element={<CRMDashboard />} />
-              <Route path="/crm/admin" element={<AdminPanel />} />
-              <Route path="/crm/team-stats" element={<TeamStats />} />
-              <Route path="/crm/blast-mail" element={<BlastMail />} />
-              <Route path="/crm/darshan" element={<DarshanCRM />} />
-              <Route path="/crm/astro" element={<AstroCRM />} />
-              <Route path="/crm/package" element={<PackageCRM />} />
-              <Route path="/crm/inquiry" element={<InquiryCRM />} />
-              {/* Ops Routes */}
-              <Route path="/ops" element={<Navigate to="/ops/login" replace />} />
-              <Route path="/ops/login" element={<OpsLogin />} />
-              <Route path="/ops/dashboard" element={<OpsCRM />} />
-              <Route path="/crm/chadhawa" element={<ChadhawaCRM />} />
-              <Route path="/crm/puja" element={<PujaCRM />} />
-              <Route path="/crm/prasadam" element={<PrasadamCRM />} />
-
-              <Route path="/admin/chadhava" element={<ChadhavaList />} />
-              <Route path="/admin/chadhava/new" element={<ChadhavaForm />} />
-              <Route path="/admin/chadhava/edit/:id" element={<ChadhavaForm />} />
-
-              <Route path="/admin/login" element={<AdminLogin />} />
-
-              {/* Admin Routes - Protected */}
-              <Route element={<ProtectedRoute authType="admin" redirectPath="/admin/login" />}>
-                <Route path="/admin" element={<TempleList />} />
-                <Route path="/admin/temples" element={<TempleList />} />
-                <Route path="/admin/temples/new" element={<TempleForm />} />
-                <Route path="/admin/temples/edit/:id" element={<TempleForm />} />
-
-                <Route path="/admin/darshan" element={<DarshanList />} />
-                <Route path="/admin/darshan/new" element={<DarshanForm />} />
-                <Route path="/admin/darshan/edit/:id" element={<DarshanForm />} />
-
-                <Route path="/admin/prasadam" element={<PrasadamList />} />
-                <Route path="/admin/prasadam/new" element={<PrasadamForm />} />
                 <Route path="/admin/prasadam/edit/:id" element={<PrasadamForm />} />
 
                 <Route path="/admin/chadhava" element={<ChadhavaList />} />
                 <Route path="/admin/chadhava/new" element={<ChadhavaForm />} />
                 <Route path="/admin/chadhava/edit/:id" element={<ChadhavaForm />} />
-              </Route>
-              <Route path="/mahashivratari" element={<Mahashivratri />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="/about-us" element={<AboutUs />} />
-              <Route path="/news-events" element={<NewsEvents />} />
-              <Route path="/news-events/:slug" element={<NewsDetail />} />
-              <Route path="/gallery" element={<Gallery />} />
-              <Route path="/terms-conditions" element={<TermsConditions />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </HelmetProvider>
+
+
+                {/* Admin Routes - Protected */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/admin" element={<TempleList />} />
+                  <Route path="/admin/temples" element={<TempleList />} />
+                  <Route path="/admin/temples/new" element={<TempleForm />} />
+                  <Route path="/admin/temples/edit/:id" element={<TempleForm />} />
+
+                  <Route path="/admin/darshan" element={<DarshanList />} />
+                  <Route path="/admin/darshan/new" element={<DarshanForm />} />
+                  <Route path="/admin/darshan/edit/:id" element={<DarshanForm />} />
+
+                  <Route path="/admin/prasadam" element={<PrasadamList />} />
+                  <Route path="/admin/prasadam/new" element={<PrasadamForm />} />
+                  <Route path="/admin/prasadam/edit/:id" element={<PrasadamForm />} />
+
+                  <Route path="/admin/chadhava" element={<ChadhavaList />} />
+                  <Route path="/admin/chadhava/new" element={<ChadhavaForm />} />
+                  <Route path="/admin/chadhava/edit/:id" element={<ChadhavaForm />} />
+                </Route>
+                <Route path="/mahashivratari" element={<Mahashivratri />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="/about-us" element={<AboutUs />} />
+                <Route path="/news-events" element={<NewsEvents />} />
+                <Route path="/news-events/:slug" element={<NewsDetail />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/terms-conditions" element={<TermsConditions />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes >
+            </BrowserRouter >
+          </TooltipProvider >
+        </ThemeProvider >
+      </AuthProvider >
+    </QueryClientProvider >
+  </HelmetProvider >
 
 
 

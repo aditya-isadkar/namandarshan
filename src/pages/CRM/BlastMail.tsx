@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-
 import { getApiUrl } from "@/utils/api";
+import CRMHeader from "./components/CRMHeader";
 
 const BlastMail = () => {
     const { toast } = useToast();
@@ -70,16 +70,22 @@ const BlastMail = () => {
             });
 
             const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || `Server Error: ${response.status} ${response.statusText}`);
+            }
+
             if (data.success) {
                 toast({ title: "Test Email Sent", description: `Sent to ${testEmail}` });
             } else {
-                throw new Error(data.message);
+                throw new Error(data.message || "Unknown server error");
             }
         } catch (error: any) {
+            console.error("Test Email functionality error:", error);
             toast({
                 variant: "destructive",
-                title: "Error",
-                description: error.message || "Failed to send test email",
+                title: "Error Sending Test",
+                description: error.message || "Failed to send test email (Check console)",
             });
         } finally {
             setIsTestSending(false);
@@ -127,23 +133,24 @@ const BlastMail = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white p-6">
-                <div className="flex items-center gap-4">
-                    <Link to="/crm/dashboard">
-                        <Button variant="ghost" className="text-white hover:bg-indigo-700">
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back
-                        </Button>
-                    </Link>
-                    <div>
-                        <h1 className="text-3xl font-bold">📧 Blast Mail</h1>
-                        <p className="text-indigo-100">Send email campaigns to customers</p>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+            <CRMHeader />
+            <div className="p-6">
+                <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white p-6 rounded-lg mb-6 shadow-md">
+                    <div className="flex items-center gap-4">
+                        <Link to="/crm/dashboard">
+                            <Button variant="ghost" className="text-white hover:bg-indigo-700">
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Back
+                            </Button>
+                        </Link>
+                        <div>
+                            <h1 className="text-3xl font-bold">📧 Blast Mail</h1>
+                            <p className="text-indigo-100">Send email campaigns to customers</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Campaign Form */}
                     <div className="lg:col-span-2">
@@ -177,8 +184,6 @@ const BlastMail = () => {
                                                     <SelectItem value="all">All Customers</SelectItem>
                                                     <SelectItem value="serviceType">By Service Type</SelectItem>
                                                     <SelectItem value="stage">By Stage</SelectItem>
-                                                    {/* Custom selection not yet implemented */}
-                                                    {/* <SelectItem value="custom">Custom Selection</SelectItem> */}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -326,5 +331,6 @@ const BlastMail = () => {
         </div>
     );
 };
+
 
 export default BlastMail;

@@ -25,9 +25,12 @@ interface LeadFormModalProps {
     onClose: () => void;
     onSuccess: () => void;
     lead?: any;
+    serviceType?: string;
+    title?: string;
+    serviceOptions?: string[];
 }
 
-const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps) => {
+const LeadFormModal = ({ isOpen, onClose, onSuccess, lead, serviceType, title, serviceOptions }: LeadFormModalProps) => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -53,34 +56,67 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
             actionType: "",
             notes: "",
         },
+        maybeLaterDate: "",
     });
 
     useEffect(() => {
         if (lead) {
-            setFormData({
-                leadInformation: {
-                    name: lead.leadInformation?.name || "",
-                    email: lead.leadInformation?.email || "",
-                    source: lead.leadInformation?.source || "website",
-                },
-                contactDetails: {
-                    mobile: lead.contactDetails?.mobile || "",
-                    whatsapp: lead.contactDetails?.whatsapp || "",
-                    alternatePhone: lead.contactDetails?.alternatePhone || "",
-                },
-                templeAndDate: {
-                    temple: lead.templeAndDate?.temple || "",
-                    preferredDate: lead.templeAndDate?.preferredDate || "",
-                    serviceType: lead.templeAndDate?.serviceType || "darshan",
-                },
-                currentStage: lead.currentStage || "new lead",
-                assignedTo: lead.assignedTo || "",
-                nextAction: {
-                    actionDate: lead.nextAction?.actionDate?.split("T")[0] || "",
-                    actionType: lead.nextAction?.actionType || "",
-                    notes: lead.nextAction?.notes || "",
-                },
-            });
+            // Check if it's a Booking object (from Astro/Prasadam/etc) or a Lead object
+            const isBooking = !!lead.userDetails;
+
+            if (isBooking) {
+                setFormData({
+                    leadInformation: {
+                        name: lead.userDetails?.name || "",
+                        email: lead.userDetails?.email || "",
+                        source: lead.leadInformation?.source || "website", // Fallback or keep existing
+                    },
+                    contactDetails: {
+                        mobile: lead.userDetails?.mobile || "",
+                        whatsapp: lead.userDetails?.whatsapp || lead.userDetails?.mobile || "",
+                        alternatePhone: lead.contactDetails?.alternatePhone || "",
+                    },
+                    templeAndDate: {
+                        temple: lead.serviceName || "",
+                        preferredDate: lead.bookingDetails?.date?.split("T")[0] || "",
+                        serviceType: lead.bookingDetails?.darshanType || lead.type || "darshan",
+                    },
+                    currentStage: lead.status || "new lead",
+                    assignedTo: lead.assignedTo || "",
+                    nextAction: {
+                        actionDate: lead.nextAction?.actionDate?.split("T")[0] || "",
+                        actionType: lead.nextAction?.actionType || "",
+                        notes: lead.nextAction?.notes || "",
+                    },
+                    maybeLaterDate: lead.maybeLaterDate?.split("T")[0] || "",
+                });
+            } else {
+                setFormData({
+                    leadInformation: {
+                        name: lead.leadInformation?.name || "",
+                        email: lead.leadInformation?.email || "",
+                        source: lead.leadInformation?.source || "website",
+                    },
+                    contactDetails: {
+                        mobile: lead.contactDetails?.mobile || "",
+                        whatsapp: lead.contactDetails?.whatsapp || "",
+                        alternatePhone: lead.contactDetails?.alternatePhone || "",
+                    },
+                    templeAndDate: {
+                        temple: lead.templeAndDate?.temple || "",
+                        preferredDate: lead.templeAndDate?.preferredDate || "",
+                        serviceType: lead.templeAndDate?.serviceType || "darshan",
+                    },
+                    currentStage: lead.currentStage || "new lead",
+                    assignedTo: lead.assignedTo || "",
+                    nextAction: {
+                        actionDate: lead.nextAction?.dueDate?.split("T")[0] || "",
+                        actionType: lead.nextAction?.action || "",
+                        notes: lead.nextAction?.notes || "",
+                    },
+                    maybeLaterDate: lead.maybeLaterDate?.split("T")[0] || "",
+                });
+            }
         } else {
             // Reset form for new lead
             setFormData({
@@ -97,7 +133,7 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                 templeAndDate: {
                     temple: "",
                     preferredDate: "",
-                    serviceType: "darshan",
+                    serviceType: serviceType || "darshan",
                 },
                 currentStage: "new lead",
                 assignedTo: "",
@@ -106,6 +142,7 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                     actionType: "",
                     notes: "",
                 },
+                maybeLaterDate: "",
             });
         }
     }, [lead, isOpen]);
@@ -126,21 +163,87 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
             return;
         }
 
+        if (formData.currentStage === 'maybe later' && !formData.maybeLaterDate) {
+            toast({ variant: "destructive", title: "Date Required", description: "Please select a date for Maybe Later status" });
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            const url = lead
-                ? `/api/crm/leads/${lead.leadId}`
-                : "/api/crm/leads";
-            const method = lead ? "PUT" : "POST";
+            let url = "/api/crm/leads";
+            let method = "POST";
+            let body = {};
+
+            // Determine if we are editing a Booking or a Lead
+            const isBooking = lead && !!lead.userDetails;
+
+            if (isBooking) {
+                // Editing a Booking (Astro, Prasadam, etc.)
+                url = `/api/crm/bookings/${lead._id}`;
+                method = "PUT";
+
+                // Construct Booking Payload
+                body = {
+                    type: lead.type || "darshan", // Preserve original type
+                    serviceName: formData.templeAndDate.temple,
+                    userDetails: {
+                        name: formData.leadInformation.name,
+                        email: formData.leadInformation.email,
+                        mobile: formData.contactDetails.mobile,
+                        whatsapp: formData.contactDetails.whatsapp,
+                    },
+                    bookingDetails: {
+                        ...lead.bookingDetails, // Keep existing details
+                        date: formData.templeAndDate.preferredDate,
+                        darshanType: formData.templeAndDate.serviceType,
+                        // Add quantity if it was Prasadam? logic is loose here but better than nothing
+                    },
+                    status: formData.currentStage,
+                    assignedTo: formData.assignedTo,
+                    nextAction: formData.nextAction.actionDate ? {
+                        actionDate: formData.nextAction.actionDate,
+                        actionType: formData.nextAction.actionType,
+                        notes: formData.nextAction.notes
+                    } : undefined,
+                    maybeLaterDate: formData.currentStage === 'maybe later' ? formData.maybeLaterDate : undefined
+                };
+
+            } else if (lead) {
+                // Editing a Lead
+                url = `/api/crm/leads/${lead.leadId}`;
+                method = "PUT";
+                // Map frontend state to backend Lead schema
+                body = {
+                    ...formData,
+                    nextAction: {
+                        action: formData.nextAction.actionType,
+                        dueDate: formData.nextAction.actionDate,
+                        notes: formData.nextAction.notes
+                    }
+                };
+            } else {
+                // Creating new Lead
+                url = "/api/crm/leads";
+                method = "POST";
+                // Map frontend state to backend Lead schema
+                body = {
+                    ...formData,
+                    nextAction: {
+                        action: formData.nextAction.actionType,
+                        dueDate: formData.nextAction.actionDate,
+                        notes: formData.nextAction.notes
+                    }
+                };
+            }
 
             const response = await fetch(getApiUrl(url), {
                 method,
                 headers: {
                     "Content-Type": "application/json",
-                    'x-user-id': user.userId // Add auth header
+                    'x-user-id': user.userId
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(body),
             });
 
             const data = await response.json();
@@ -172,15 +275,15 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-card dark:text-foreground dark:border-border transition-colors duration-300">
                 <DialogHeader>
-                    <DialogTitle>{lead ? "Edit Lead" : "Add New Lead"}</DialogTitle>
+                    <DialogTitle className="dark:text-foreground">{title || (lead ? "Edit Lead" : "Add New Lead")}</DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Lead Information */}
                     <div className="space-y-3">
-                        <h3 className="font-semibold text-sm text-gray-700">Lead Information</h3>
+                        <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Lead Information</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="name">Name *</Label>
@@ -196,6 +299,7 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                             },
                                         })
                                     }
+                                    className="dark:bg-background dark:border-input"
                                     required
                                 />
                             </div>
@@ -214,6 +318,8 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                             },
                                         })
                                     }
+
+                                    className="dark:bg-background dark:border-input"
                                 />
                             </div>
                             <div>
@@ -230,10 +336,10 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                         })
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="dark:bg-background dark:border-input">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="dark:bg-card dark:border-border">
                                         <SelectItem value="website">Website</SelectItem>
                                         <SelectItem value="referral">Referral</SelectItem>
                                         <SelectItem value="social_media">Social Media</SelectItem>
@@ -247,7 +353,7 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
 
                     {/* Contact Details */}
                     <div className="space-y-3">
-                        <h3 className="font-semibold text-sm text-gray-700">Contact Details</h3>
+                        <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Contact Details</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="mobile">Mobile *</Label>
@@ -280,6 +386,8 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                             },
                                         })
                                     }
+
+                                    className="dark:bg-background dark:border-input"
                                 />
                             </div>
                             <div>
@@ -303,7 +411,7 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
 
                     {/* Temple & Date */}
                     <div className="space-y-3">
-                        <h3 className="font-semibold text-sm text-gray-700">Temple & Service</h3>
+                        <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Temple & Service</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="temple">Temple</Label>
@@ -319,6 +427,8 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                             },
                                         })
                                     }
+
+                                    className="dark:bg-background dark:border-input"
                                 />
                             </div>
                             <div>
@@ -336,42 +446,59 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                             },
                                         })
                                     }
+
+                                    className="dark:bg-background dark:border-input"
                                 />
                             </div>
                             <div>
                                 <Label htmlFor="serviceType">Service Type</Label>
-                                <Select
-                                    value={formData.templeAndDate.serviceType}
-                                    onValueChange={(value) =>
-                                        setFormData({
-                                            ...formData,
-                                            templeAndDate: {
-                                                ...formData.templeAndDate,
-                                                serviceType: value,
-                                            },
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="darshan">Darshan</SelectItem>
-                                        <SelectItem value="puja">Puja</SelectItem>
-                                        <SelectItem value="prasadam">Prasadam</SelectItem>
-                                        <SelectItem value="chadhava">Chadhava</SelectItem>
-                                        <SelectItem value="yatra">Yatra</SelectItem>
-                                        <SelectItem value="astro">Astro</SelectItem>
-                                        <SelectItem value="other">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                {serviceOptions ? (
+                                    <Select
+                                        value={formData.templeAndDate.serviceType}
+                                        onValueChange={(value) =>
+                                            setFormData({
+                                                ...formData,
+                                                templeAndDate: {
+                                                    ...formData.templeAndDate,
+                                                    serviceType: value,
+                                                },
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger className="dark:bg-background dark:border-input">
+                                            <SelectValue placeholder="Select Service Type" />
+                                        </SelectTrigger>
+                                        <SelectContent className="dark:bg-card dark:border-border">
+                                            {serviceOptions.map((option) => (
+                                                <SelectItem key={option} value={option}>
+                                                    {option}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <Input
+                                        id="serviceType"
+                                        value={formData.templeAndDate.serviceType}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                templeAndDate: {
+                                                    ...formData.templeAndDate,
+                                                    serviceType: e.target.value,
+                                                },
+                                            })
+                                        }
+                                        placeholder="Enter service type (darshan, puja, etc.)"
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>
 
                     {/* Assignment & Stage */}
                     <div className="space-y-3">
-                        <h3 className="font-semibold text-sm text-gray-700">Stage & Assignment</h3>
+                        <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Stage & Assignment</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="currentStage">Current Stage</Label>
@@ -381,10 +508,10 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                         setFormData({ ...formData, currentStage: value })
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="dark:bg-background dark:border-input">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="dark:bg-card dark:border-border">
                                         <SelectItem value="new lead">New Lead</SelectItem>
                                         <SelectItem value="contacted">Contacted</SelectItem>
                                         <SelectItem value="not reachable">Not Reachable</SelectItem>
@@ -395,10 +522,25 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                         <SelectItem value="converted/won">Converted/Won</SelectItem>
                                         <SelectItem value="not interested">Not Interested</SelectItem>
                                         <SelectItem value="lost">Lost</SelectItem>
+                                        <SelectItem value="lost">Lost</SelectItem>
                                         <SelectItem value="duplicate/invalid">Duplicate/Invalid</SelectItem>
+                                        <SelectItem value="maybe later">Maybe Later</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
+                            {formData.currentStage === 'maybe later' && (
+                                <div>
+                                    <Label htmlFor="maybeLaterDate">Follow-up Date</Label>
+                                    <Input
+                                        id="maybeLaterDate"
+                                        type="date"
+                                        value={formData.maybeLaterDate}
+                                        onChange={(e) => setFormData({ ...formData, maybeLaterDate: e.target.value })}
+                                        className="dark:bg-background dark:border-input"
+                                        required
+                                    />
+                                </div>
+                            )}
                             <div>
                                 <Label htmlFor="assignedTo">Assigned To</Label>
                                 <Input
@@ -408,6 +550,8 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                     onChange={(e) =>
                                         setFormData({ ...formData, assignedTo: e.target.value })
                                     }
+
+                                    className="dark:bg-background dark:border-input"
                                 />
                             </div>
                         </div>
@@ -415,7 +559,7 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
 
                     {/* Next Action */}
                     <div className="space-y-3">
-                        <h3 className="font-semibold text-sm text-gray-700">Next Action</h3>
+                        <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Next Action</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="actionDate">Action Date</Label>
@@ -432,6 +576,8 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                             },
                                         })
                                     }
+
+                                    className="dark:bg-background dark:border-input"
                                 />
                             </div>
                             <div>
@@ -448,10 +594,10 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                         })
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="dark:bg-background dark:border-input">
                                         <SelectValue placeholder="Select action type" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="dark:bg-card dark:border-border">
                                         <SelectItem value="call">📞 Call</SelectItem>
                                         <SelectItem value="email">✉️ Email</SelectItem>
                                         <SelectItem value="whatsapp">💬 WhatsApp</SelectItem>
@@ -478,6 +624,7 @@ const LeadFormModal = ({ isOpen, onClose, onSuccess, lead }: LeadFormModalProps)
                                         })
                                     }
                                     rows={3}
+                                    className="dark:bg-background dark:border-input"
                                 />
                             </div>
                         </div>

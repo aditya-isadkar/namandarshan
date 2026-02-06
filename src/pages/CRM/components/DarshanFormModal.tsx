@@ -36,7 +36,6 @@ const DarshanFormModal = ({ isOpen, onClose, onSuccess, booking }: DarshanFormMo
         temple: "",
         darshanType: "",
         preferredDate: "",
-        devoteeCount: "1",
         assignedTo: "",
         status: "new lead",
         notes: "",
@@ -48,16 +47,15 @@ const DarshanFormModal = ({ isOpen, onClose, onSuccess, booking }: DarshanFormMo
     useEffect(() => {
         if (booking) {
             setFormData({
-                name: booking.leadInformation?.name || "",
-                email: booking.leadInformation?.email || "",
-                mobile: booking.contactDetails?.mobile || "",
-                temple: booking.templeAndDate?.temple || "",
-                darshanType: booking.templeAndDate?.serviceType || "",
-                preferredDate: booking.templeAndDate?.preferredDate?.split("T")[0] || "",
-                devoteeCount: booking.notes?.devoteeCount || "1",
+                name: booking.userDetails?.name || booking.leadInformation?.name || "",
+                email: booking.userDetails?.email || booking.leadInformation?.email || "",
+                mobile: booking.userDetails?.mobile || booking.userDetails?.whatsapp || booking.contactDetails?.mobile || "",
+                temple: booking.serviceName || booking.templeAndDate?.temple || "",
+                darshanType: booking.bookingDetails?.darshanType || booking.templeAndDate?.serviceType || "",
+                preferredDate: booking.bookingDetails?.date?.split("T")[0] || booking.templeAndDate?.preferredDate?.split("T")[0] || "",
                 assignedTo: booking.assignedTo || "",
-                status: booking.currentStage || "new lead",
-                notes: booking.notes || "",
+                status: booking.status || booking.currentStage || "new lead",
+                notes: booking.bookingDetails?.message || booking.notes || "",
                 nextActionDate: booking.nextAction?.actionDate?.split("T")[0] || "",
                 nextActionType: booking.nextAction?.actionType || "",
                 nextActionNotes: booking.nextAction?.notes || "",
@@ -82,7 +80,6 @@ const DarshanFormModal = ({ isOpen, onClose, onSuccess, booking }: DarshanFormMo
             },
             bookingDetails: {
                 date: formData.preferredDate,
-                numberOfDevotees: parseInt(formData.devoteeCount) || 1,
                 darshanType: formData.darshanType,
                 message: formData.notes || ""
             },
@@ -187,34 +184,23 @@ const DarshanFormModal = ({ isOpen, onClose, onSuccess, booking }: DarshanFormMo
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="temple">Temple *</Label>
-                                <Select value={formData.temple} onValueChange={(val) => setFormData({ ...formData, temple: val })}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select temple" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Kedarnath Dham">Kedarnath Dham</SelectItem>
-                                        <SelectItem value="Badrinath Dham">Badrinath Dham</SelectItem>
-                                        <SelectItem value="Tirupati Balaji">Tirupati Balaji</SelectItem>
-                                        <SelectItem value="Golden Temple">Golden Temple</SelectItem>
-                                        <SelectItem value="Shirdi Sai Baba">Shirdi Sai Baba</SelectItem>
-                                        <SelectItem value="Vaishno Devi">Vaishno Devi</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Input
+                                    id="temple"
+                                    value={formData.temple}
+                                    onChange={(e) => setFormData({ ...formData, temple: e.target.value })}
+                                    required
+                                    placeholder="Enter temple name"
+                                />
                             </div>
                             <div>
                                 <Label htmlFor="darshanType">Darshan Type *</Label>
-                                <Select value={formData.darshanType} onValueChange={(val) => setFormData({ ...formData, darshanType: val })}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="General Darshan">General Darshan</SelectItem>
-                                        <SelectItem value="VIP Darshan">VIP Darshan</SelectItem>
-                                        <SelectItem value="Special Puja">Special Puja</SelectItem>
-                                        <SelectItem value="Abhishek">Abhishek</SelectItem>
-                                        <SelectItem value="Aarti">Aarti</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Input
+                                    id="darshanType"
+                                    value={formData.darshanType}
+                                    onChange={(e) => setFormData({ ...formData, darshanType: e.target.value })}
+                                    required
+                                    placeholder="Enter type (e.g. VIP, General)"
+                                />
                             </div>
                             <div>
                                 <Label htmlFor="preferredDate">Preferred Date *</Label>
@@ -224,16 +210,6 @@ const DarshanFormModal = ({ isOpen, onClose, onSuccess, booking }: DarshanFormMo
                                     value={formData.preferredDate}
                                     onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
                                     required
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="devoteeCount">Number of Devotees</Label>
-                                <Input
-                                    id="devoteeCount"
-                                    type="number"
-                                    min="1"
-                                    value={formData.devoteeCount}
-                                    onChange={(e) => setFormData({ ...formData, devoteeCount: e.target.value })}
                                 />
                             </div>
                         </div>

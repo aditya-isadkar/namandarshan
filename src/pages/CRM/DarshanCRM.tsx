@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSidebar } from "@/hooks/useSidebar";
 import { ArrowLeft, RefreshCw, Download, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,11 @@ import { getApiUrl } from "@/utils/api";
 import DarshanTable from "./components/DarshanTable";
 import DarshanFormModal from "./components/DarshanFormModal";
 import CRMSidebar from "./components/CRMSidebar";
+import CRMHeader from "./components/CRMHeader";
 import LeadDetailsModal from "./components/LeadDetailsModal";
+
+import { DateRangeFilter } from "./components/DateRangeFilter";
+import { DateRange } from "react-day-picker";
 
 const DarshanCRM = () => {
     const navigate = useNavigate();
@@ -25,15 +30,19 @@ const DarshanCRM = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [assignedToFilter, setAssignedToFilter] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>({ key: "createdAt", direction: "desc" });
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [selectedLead, setSelectedLead] = useState(null);
+    const { isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebar();
 
     // Auto-refresh state
-    const [autoRefresh, setAutoRefresh] = useState(false);
+    const [autoRefresh, setAutoRefresh] = useState(true);
     const [refreshInterval, setRefreshInterval] = useState(30);
     const [countdown, setCountdown] = useState(30);
 
@@ -51,6 +60,8 @@ const DarshanCRM = () => {
         navigate("/crm");
     };
 
+    const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 50, pages: 1 });
+
     const fetchDarshanBookings = async () => {
         setIsLoading(true);
         try {
@@ -60,6 +71,12 @@ const DarshanCRM = () => {
             params.append("limit", "50");
             if (searchTerm) params.append("search", searchTerm);
             if (statusFilter !== "all") params.append("status", statusFilter);
+            if (assignedToFilter) params.append("assignedTo", assignedToFilter);
+            if (dateRange?.from) params.append("dateFrom", dateRange.from.toISOString());
+            if (dateRange?.to) params.append("dateTo", dateRange.to.toISOString());
+            if (sortConfig) {
+                params.append("sort", `${sortConfig.direction === "desc" ? "-" : ""}${sortConfig.key}`);
+            }
 
             const response = await fetch(getApiUrl(`/api/crm/bookings?${params}`));
             const data = await response.json();
@@ -67,6 +84,7 @@ const DarshanCRM = () => {
             if (data.success) {
                 setDarshanBookings(data.data);
                 setTotalPages(data.pagination?.pages || 1);
+                if (data.pagination) setPagination(data.pagination);
             } else {
                 toast({
                     variant: "destructive",
@@ -88,7 +106,19 @@ const DarshanCRM = () => {
 
     useEffect(() => {
         if (user) fetchDarshanBookings();
-    }, [user, page, statusFilter, searchTerm]); // Refetch on pagination/filter changes
+    }, [user, page, statusFilter, searchTerm, sortConfig]); // Refetch on pagination/filter/sort changes
+
+    // Keep selected booking/lead in sync with fetched data
+    useEffect(() => {
+        if (selectedBooking) {
+            const updated = darshanBookings.find((b: any) => b._id === selectedBooking._id);
+            if (updated) setSelectedBooking(updated);
+        }
+        if (selectedLead) {
+            const updated = darshanBookings.find((b: any) => b._id === selectedLead._id);
+            if (updated) setSelectedLead(updated);
+        }
+    }, [darshanBookings]);
 
     // Auto-refresh logic
     useEffect(() => {
@@ -107,6 +137,15 @@ const DarshanCRM = () => {
         return () => clearInterval(timer);
     }, [autoRefresh, refreshInterval]);
 
+    const handleSort = (key: string) => {
+        setSortConfig((current) => {
+            if (current?.key === key) {
+                return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+            }
+            return { key, direction: "desc" }; // Default new sort to desc
+        });
+    };
+
     const handleFilter = () => {
         fetchDarshanBookings();
     };
@@ -117,6 +156,9 @@ const DarshanCRM = () => {
             params.append("type", "darshan");
             if (searchTerm) params.append("search", searchTerm);
             if (statusFilter !== "all") params.append("status", statusFilter);
+            if (sortConfig) {
+                params.append("sort", `${sortConfig.direction === "desc" ? "-" : ""}${sortConfig.key}`);
+            }
 
             const response = await fetch(getApiUrl(`/api/crm/bookings/export?${params}`), {
                 headers: {
@@ -156,14 +198,23 @@ const DarshanCRM = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 dark:bg-background transition-colors duration-300">
             {/* Sidebar Navigation */}
-            {user && <CRMSidebar user={user} onLogout={handleLogout} />}
+            {user && (
+                <CRMSidebar
+                    user={user}
+                    onLogout={handleLogout}
+                    isOpen={isSidebarOpen}
+                    onToggle={toggleSidebar}
+                />
+            )}
 
             {/* Main Content */}
-            <div className="lg:pl-64">
+            <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-64" : "lg:pl-0"}`}>
+                <CRMHeader toggleSidebar={toggleSidebar} user={user} />
+
                 {/* Header */}
-                <div className="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-6">
+                <div className="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-6 dark:from-orange-900 dark:to-orange-800">
                     <div>
                         <h1 className="text-3xl font-bold">🙏 Darshan CRM</h1>
                         <p className="text-orange-100">Manage darshan bookings and temple visits</p>
@@ -172,7 +223,7 @@ const DarshanCRM = () => {
 
                 {/* Controls */}
                 <div className="p-6">
-                    <div className="bg-white rounded-lg shadow p-4 mb-6">
+                    <div className="bg-white dark:bg-card dark:border-border rounded-lg shadow p-4 mb-6 transition-colors duration-300">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                             {/* Search */}
                             <div className="relative">
@@ -199,6 +250,17 @@ const DarshanCRM = () => {
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            {/* Assigned To Filter */}
+                            <Input
+                                placeholder="Assigned To..."
+                                value={assignedToFilter}
+                                onChange={(e) => setAssignedToFilter(e.target.value)}
+                                className="bg-white dark:bg-background"
+                            />
+
+                            {/* Date Range Filter */}
+                            <DateRangeFilter date={dateRange} setDate={setDateRange} className="bg-white" />
 
                             {/* Filter Button */}
                             <Button onClick={handleFilter} className="bg-orange-600 hover:bg-orange-700">
@@ -282,7 +344,7 @@ const DarshanCRM = () => {
                     </div>
 
                     {/* Data Table */}
-                    <div className="bg-white rounded-lg shadow">
+                    <div className="bg-white dark:bg-card rounded-lg shadow transition-colors duration-300">
                         <DarshanTable
                             bookings={darshanBookings}
                             onRefresh={fetchDarshanBookings}
@@ -292,6 +354,9 @@ const DarshanCRM = () => {
                                 setIsDetailsOpen(true);
                             }}
                             user={user} // Pass user for RBAC
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
+                            pagination={pagination}
                         />
 
                         {/* Pagination Controls */}

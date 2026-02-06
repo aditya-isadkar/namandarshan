@@ -6,18 +6,13 @@ import { Menu, X, LayoutDashboard, Users, Mail, Home, Moon, Package, MessageSqua
 interface CRMSidebarProps {
     user: any;
     onLogout: () => void;
+    isOpen: boolean;
+    onToggle: () => void;
 }
 
-const CRMSidebar = ({ user, onLogout }: CRMSidebarProps) => {
+const CRMSidebar = ({ user, onLogout, isOpen, onToggle }: CRMSidebarProps) => {
     const location = useLocation();
-    const [isOpen, setIsOpen] = useState(() => {
-        const saved = localStorage.getItem("sidebarOpen");
-        return saved !== null ? saved === "true" : true;
-    });
 
-    useEffect(() => {
-        localStorage.setItem("sidebarOpen", String(isOpen));
-    }, [isOpen]);
 
     const navLinks = [
         { path: "/crm/dashboard", icon: LayoutDashboard, label: "DASHBOARD", emoji: "📊" },
@@ -36,15 +31,6 @@ const CRMSidebar = ({ user, onLogout }: CRMSidebarProps) => {
 
     return (
         <>
-            {/* Toggle Button - Always Visible */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="fixed top-4 left-4 z-50 p-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors"
-                aria-label="Toggle sidebar"
-            >
-                {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-
             {/* Sidebar */}
             <div
                 className={`fixed left-0 top-0 h-full bg-gray-900 text-white transition-all duration-300 ease-in-out z-40 ${isOpen ? "w-64" : "w-0"
@@ -114,7 +100,7 @@ const CRMSidebar = ({ user, onLogout }: CRMSidebarProps) => {
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-                    onClick={() => setIsOpen(false)}
+                    onClick={onToggle}
                 />
             )}
         </>

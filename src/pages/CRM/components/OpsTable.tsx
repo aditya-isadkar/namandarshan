@@ -11,9 +11,12 @@ interface OpsTableProps {
     onRefresh: () => void;
     onEdit: (item: any) => void;
     onView?: (item: any) => void;
+    sortConfig?: { key: string; direction: "asc" | "desc" } | null;
+    onSort?: (key: string) => void;
+    pagination?: { total: number; page: number; limit: number; pages: number };
 }
 
-const OpsTable = ({ data, onRefresh, onEdit, onView }: OpsTableProps) => {
+const OpsTable = ({ data, onRefresh, onEdit, onView, sortConfig, onSort, pagination }: OpsTableProps) => {
     const { toast } = useToast();
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -39,6 +42,7 @@ const OpsTable = ({ data, onRefresh, onEdit, onView }: OpsTableProps) => {
             "in-progress": "bg-purple-100 text-purple-800",
             completed: "bg-green-100 text-green-800",
             cancelled: "bg-red-100 text-red-800",
+            "maybe later": "bg-pink-100 text-pink-800",
         };
         return colors[status] || "bg-gray-100 text-gray-800";
     };
@@ -54,6 +58,26 @@ const OpsTable = ({ data, onRefresh, onEdit, onView }: OpsTableProps) => {
                 ))}
             </div>
         );
+    };
+
+    const renderSortIcon = (key: string) => {
+        if (!sortConfig || sortConfig.key !== key) return null;
+        return sortConfig.direction === "asc" ? " ↑" : " ↓";
+    };
+
+    const handleSort = (key: string) => {
+        if (onSort) onSort(key);
+    };
+
+    const getSerialNo = (index: number) => {
+        if (!pagination) return index + 1;
+        const { total, page, limit } = pagination;
+        // If sorting by createdAt DESC (newest first), reverse the numbering
+        if (sortConfig?.key === "createdAt" && sortConfig.direction === "desc") {
+            return total - ((page - 1) * limit) - index;
+        }
+        // Default or ASC: sequential
+        return ((page - 1) * limit) + index + 1;
     };
 
     if (data.length === 0) {
@@ -73,17 +97,17 @@ const OpsTable = ({ data, onRefresh, onEdit, onView }: OpsTableProps) => {
                         <TableHeader>
                             <TableRow className="bg-gray-50">
                                 <TableHead className="font-semibold">S.NO</TableHead>
-                                <TableHead className="font-semibold">LEAD INFO</TableHead>
-                                <TableHead className="font-semibold">CREATED AT</TableHead>
-                                <TableHead className="font-semibold">PAYMENT DATE</TableHead>
-                                <TableHead className="font-semibold">RECEIVED (₹)</TableHead>
-                                <TableHead className="font-semibold">SERVICE DETAILS</TableHead>
+                                <TableHead onClick={() => handleSort("userDetails.name")} className="font-semibold cursor-pointer hover:bg-gray-100">LEAD INFO{renderSortIcon("userDetails.name")}</TableHead>
+                                <TableHead onClick={() => handleSort("createdAt")} className="font-semibold cursor-pointer hover:bg-gray-100">CREATED AT{renderSortIcon("createdAt")}</TableHead>
+                                <TableHead onClick={() => handleSort("bookingDetails.date")} className="font-semibold cursor-pointer hover:bg-gray-100">PAYMENT DATE{renderSortIcon("bookingDetails.date")}</TableHead>
+                                <TableHead onClick={() => handleSort("bookingDetails.amount")} className="font-semibold cursor-pointer hover:bg-gray-100">RECEIVED (₹){renderSortIcon("bookingDetails.amount")}</TableHead>
+                                <TableHead onClick={() => handleSort("serviceName")} className="font-semibold cursor-pointer hover:bg-gray-100">SERVICE DETAILS{renderSortIcon("serviceName")}</TableHead>
                                 <TableHead className="font-semibold">HOTEL & TAXI</TableHead>
                                 <TableHead className="font-semibold">EXTRA SERVICES</TableHead>
-                                <TableHead className="font-semibold">PANDIT ASSIGNED</TableHead>
-                                <TableHead className="font-semibold">STATUS</TableHead>
-                                <TableHead className="font-semibold">PANDIT PAYMENT</TableHead>
-                                <TableHead className="font-semibold">RATING</TableHead>
+                                <TableHead onClick={() => handleSort("assignedTo")} className="font-semibold cursor-pointer hover:bg-gray-100">PANDIT ASSIGNED{renderSortIcon("assignedTo")}</TableHead>
+                                <TableHead onClick={() => handleSort("status")} className="font-semibold cursor-pointer hover:bg-gray-100">STATUS{renderSortIcon("status")}</TableHead>
+                                <TableHead onClick={() => handleSort("bookingDetails.panditPayment")} className="font-semibold cursor-pointer hover:bg-gray-100">PANDIT PAYMENT{renderSortIcon("bookingDetails.panditPayment")}</TableHead>
+                                <TableHead onClick={() => handleSort("bookingDetails.rating")} className="font-semibold cursor-pointer hover:bg-gray-100">RATING{renderSortIcon("bookingDetails.rating")}</TableHead>
                                 <TableHead className="font-semibold">ACTION</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -91,7 +115,7 @@ const OpsTable = ({ data, onRefresh, onEdit, onView }: OpsTableProps) => {
                             {data.map((item: any, index: number) => {
                                 return (
                                     <TableRow key={item._id} className="hover:bg-gray-50">
-                                        <TableCell className="font-medium">{index + 1}</TableCell>
+                                        <TableCell className="font-medium">{getSerialNo(index)}</TableCell>
                                         <TableCell>
                                             <div className="flex flex-col">
                                                 <span className="font-medium">{item.userDetails?.name || "N/A"}</span>
@@ -128,6 +152,11 @@ const OpsTable = ({ data, onRefresh, onEdit, onView }: OpsTableProps) => {
                                         <TableCell>
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
                                                 {(item.status || "pending").toUpperCase()}
+                                                {item.status === 'maybe later' && item.maybeLaterDate && (
+                                                    <span className="block text-[10px] mt-0.5">
+                                                        {new Date(item.maybeLaterDate).toLocaleDateString("en-IN")}
+                                                    </span>
+                                                )}
                                             </span>
                                         </TableCell>
                                         <TableCell className="font-mono text-xs">

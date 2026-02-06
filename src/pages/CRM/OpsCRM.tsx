@@ -10,8 +10,13 @@ import OpsTable from "./components/OpsTable";
 import OpsFormModal from "./components/OpsFormModal";
 import CSVImportModal from "./components/CSVImportModal";
 import OpsSidebar from "./components/OpsSidebar";
+import CRMHeader from "./components/CRMHeader";
 import LeadDetailsModal from "./components/LeadDetailsModal";
 import { useNavigate } from "react-router-dom";
+import { useSidebar } from "@/hooks/useSidebar";
+
+import { DateRangeFilter } from "./components/DateRangeFilter";
+import { DateRange } from "react-day-picker";
 
 const OpsCRM = () => {
     const navigate = useNavigate();
@@ -24,11 +29,17 @@ const OpsCRM = () => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [isImportOpen, setIsImportOpen] = useState(false);
-    const [autoRefresh, setAutoRefresh] = useState(false);
+    const [autoRefresh, setAutoRefresh] = useState(true);
     const [refreshInterval, setRefreshInterval] = useState(30);
     const [countdown, setCountdown] = useState(30);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [viewLead, setViewLead] = useState(null);
+    const { isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebar("opsSidebarOpen");
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>({ key: "createdAt", direction: "desc" });
+    const [assignedToFilter, setAssignedToFilter] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+    const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, pages: 1 });
 
     useEffect(() => {
         const opsUser = localStorage.getItem("opsUser");
@@ -56,10 +67,19 @@ const OpsCRM = () => {
                 params.append("status", "converted/won");
             }
             if (searchTerm) params.append("search", searchTerm);
+            if (assignedToFilter) params.append("assignedTo", assignedToFilter);
+            if (dateRange?.from) params.append("dateFrom", dateRange.from.toISOString());
+            if (dateRange?.to) params.append("dateTo", dateRange.to.toISOString());
+            if (sortConfig) {
+                params.append("sort", `${sortConfig.direction === "desc" ? "-" : ""}${sortConfig.key}`);
+            }
 
             const response = await fetch(getApiUrl(`/api/crm/bookings?${params}`));
             const data = await response.json();
-            if (data.success) setFulfillments(data.data);
+            if (data.success) {
+                setFulfillments(data.data);
+                if (data.pagination) setPagination(data.pagination);
+            }
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Failed to fetch fulfilment data" });
         } finally {
@@ -67,7 +87,7 @@ const OpsCRM = () => {
         }
     };
 
-    useEffect(() => { if (user) fetchData(); }, [user]);
+    useEffect(() => { if (user) fetchData(); }, [user, sortConfig]);
 
     useEffect(() => {
         if (!autoRefresh) return;
@@ -87,12 +107,29 @@ const OpsCRM = () => {
         fetchData();
     };
 
+    const handleSort = (key: string) => {
+        setSortConfig((current) => {
+            if (current?.key === key) {
+                return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+            }
+            return { key, direction: "desc" };
+        });
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
-            {user && <OpsSidebar user={user} onLogout={handleLogout} />}
+            {user && (
+                <OpsSidebar
+                    user={user}
+                    onLogout={handleLogout}
+                    isOpen={isSidebarOpen}
+                    onToggle={toggleSidebar}
+                />
+            )}
 
-            <div className="lg:pl-64">
+            <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-64" : "lg:pl-0"}`}>
                 {/* Header */}
+                <CRMHeader toggleSidebar={toggleSidebar} user={user} />
                 <div className="bg-white border-b p-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">⚙ Ops / Fulfilment CRM</h1>
@@ -124,8 +161,17 @@ const OpsCRM = () => {
                                     <SelectItem value="in-progress">In Progress</SelectItem>
                                     <SelectItem value="completed">Completed</SelectItem>
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    <SelectItem value="maybe later">Maybe Later</SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            <Input
+                                placeholder="Assigned To..."
+                                value={assignedToFilter}
+                                onChange={(e) => setAssignedToFilter(e.target.value)}
+                                className="max-w-[180px]"
+                            />
+                            <DateRangeFilter date={dateRange} setDate={setDateRange} className="bg-white" />
 
                             {/* Search Button */}
                             <Button onClick={handleFilter} className="bg-orange-500 hover:bg-orange-600">
@@ -199,6 +245,9 @@ const OpsCRM = () => {
                             setSelectedItem(item);
                             setIsFormOpen(true);
                         }}
+                        sortConfig={sortConfig}
+                        onSort={handleSort}
+                        pagination={pagination}
                     />
 
                     {/* Form Modal */}

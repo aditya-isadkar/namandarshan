@@ -9,8 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LeadFormModal from "./components/LeadFormModal";
 import CRMSidebar from "./components/CRMSidebar";
+import CRMHeader from "./components/CRMHeader";
 import LeadDetailsModal from "./components/LeadDetailsModal";
 import { useNavigate } from "react-router-dom";
+import { useSidebar } from "@/hooks/useSidebar";
+
+import { DateRangeFilter } from "./components/DateRangeFilter";
+import { DateRange } from "react-day-picker";
 
 const AstroCRM = () => {
     const navigate = useNavigate();
@@ -20,13 +25,17 @@ const AstroCRM = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [assignedToFilter, setAssignedToFilter] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>({ key: "createdAt", direction: "desc" });
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-    const [autoRefresh, setAutoRefresh] = useState(false);
+    const [autoRefresh, setAutoRefresh] = useState(true);
     const [refreshInterval, setRefreshInterval] = useState(30);
     const [countdown, setCountdown] = useState(30);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [selectedLead, setSelectedLead] = useState(null);
+    const { isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebar();
 
     useEffect(() => {
         const crmUser = localStorage.getItem("crmUser");
@@ -49,6 +58,12 @@ const AstroCRM = () => {
             params.append("type", "astro");
             if (searchTerm) params.append("search", searchTerm);
             if (statusFilter !== "all") params.append("status", statusFilter);
+            if (assignedToFilter) params.append("assignedTo", assignedToFilter);
+            if (dateRange?.from) params.append("dateFrom", dateRange.from.toISOString());
+            if (dateRange?.to) params.append("dateTo", dateRange.to.toISOString());
+            if (sortConfig) {
+                params.append("sort", `${sortConfig.direction === "desc" ? "-" : ""}${sortConfig.key}`);
+            }
             const response = await fetch(getApiUrl(`/api/crm/bookings?${params}`));
             const data = await response.json();
             if (data.success) {
@@ -68,7 +83,7 @@ const AstroCRM = () => {
         }
     };
 
-    useEffect(() => { if (user) fetchData(); }, [user]);
+    useEffect(() => { if (user) fetchData(); }, [user, sortConfig]); // Refetch on sort change
     useEffect(() => {
         if (!autoRefresh) return;
         const timer = setInterval(() => {
@@ -83,11 +98,33 @@ const AstroCRM = () => {
         return () => clearInterval(timer);
     }, [autoRefresh, refreshInterval]);
 
+    const handleSort = (key: string) => {
+        setSortConfig((current) => {
+            if (current?.key === key) {
+                return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+            }
+            return { key, direction: "desc" };
+        });
+    };
+
+    const renderSortIcon = (key: string) => {
+        if (!sortConfig || sortConfig.key !== key) return null;
+        return sortConfig.direction === "asc" ? " ↑" : " ↓";
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
-            {user && <CRMSidebar user={user} onLogout={handleLogout} />}
+            {user && (
+                <CRMSidebar
+                    user={user}
+                    onLogout={handleLogout}
+                    isOpen={isSidebarOpen}
+                    onToggle={toggleSidebar}
+                />
+            )}
 
-            <div className="lg:pl-64">
+            <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-64" : "lg:pl-0"}`}>
+                <CRMHeader toggleSidebar={toggleSidebar} user={user} />
                 <div className="bg-gradient-to-r from-purple-600 to-purple-500 text-white p-6">
                     <div>
                         <h1 className="text-3xl font-bold">⭐ Astro CRM</h1>
@@ -112,6 +149,13 @@ const AstroCRM = () => {
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Input
+                                placeholder="Assigned To..."
+                                value={assignedToFilter}
+                                onChange={(e) => setAssignedToFilter(e.target.value)}
+                                className="bg-white"
+                            />
+                            <DateRangeFilter date={dateRange} setDate={setDateRange} className="bg-white" />
                             <Button onClick={fetchData} className="bg-purple-600 hover:bg-purple-700"><Search className="w-4 h-4 mr-2" />Filter</Button>
                             <Button onClick={() => setIsFormOpen(true)} className="bg-green-600 hover:bg-green-700"><Plus className="w-4 h-4 mr-2" />Add Consultation</Button>
                         </div>
@@ -144,14 +188,14 @@ const AstroCRM = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-50">
-                                        <TableHead>ID</TableHead>
-                                        <TableHead>CREATED AT</TableHead>
-                                        <TableHead>CLIENT NAME</TableHead>
+                                        <TableHead onClick={() => handleSort("leadId")} className="cursor-pointer hover:bg-gray-100">ID{renderSortIcon("leadId")}</TableHead>
+                                        <TableHead onClick={() => handleSort("createdAt")} className="cursor-pointer hover:bg-gray-100">CREATED AT{renderSortIcon("createdAt")}</TableHead>
+                                        <TableHead onClick={() => handleSort("userDetails.name")} className="cursor-pointer hover:bg-gray-100">CLIENT NAME{renderSortIcon("userDetails.name")}</TableHead>
                                         <TableHead>MOBILE</TableHead>
-                                        <TableHead>CONSULTATION TYPE</TableHead>
-                                        <TableHead>SCHEDULED DATE</TableHead>
-                                        <TableHead>NEXT ACTION</TableHead>
-                                        <TableHead>STATUS</TableHead>
+                                        <TableHead onClick={() => handleSort("serviceName")} className="cursor-pointer hover:bg-gray-100">CONSULTATION TYPE{renderSortIcon("serviceName")}</TableHead>
+                                        <TableHead onClick={() => handleSort("bookingDetails.date")} className="cursor-pointer hover:bg-gray-100">SCHEDULED DATE{renderSortIcon("bookingDetails.date")}</TableHead>
+                                        <TableHead onClick={() => handleSort("nextAction.actionDate")} className="cursor-pointer hover:bg-gray-100">NEXT ACTION{renderSortIcon("nextAction.actionDate")}</TableHead>
+                                        <TableHead onClick={() => handleSort("status")} className="cursor-pointer hover:bg-gray-100">STATUS{renderSortIcon("status")}</TableHead>
                                         <TableHead>CONSULTANT</TableHead>
                                         <TableHead>ACTIONS</TableHead>
                                     </TableRow>

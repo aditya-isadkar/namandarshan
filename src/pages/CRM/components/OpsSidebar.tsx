@@ -6,32 +6,18 @@ import { Menu, X, LayoutDashboard, LogOut } from "lucide-react";
 interface OpsSidebarProps {
     user: any;
     onLogout: () => void;
+    isOpen: boolean;
+    onToggle: () => void;
 }
 
-const OpsSidebar = ({ user, onLogout }: OpsSidebarProps) => {
+const OpsSidebar = ({ user, onLogout, isOpen, onToggle }: OpsSidebarProps) => {
     const location = useLocation();
-    const [isOpen, setIsOpen] = useState(() => {
-        const saved = localStorage.getItem("opsSidebarOpen");
-        return saved !== null ? saved === "true" : true;
-    });
 
-    useEffect(() => {
-        localStorage.setItem("opsSidebarOpen", String(isOpen));
-    }, [isOpen]);
 
     const isActive = (path: string) => location.pathname === path;
 
     return (
         <>
-            {/* Toggle Button */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="fixed top-4 left-4 z-50 p-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors"
-                aria-label="Toggle sidebar"
-            >
-                {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-
             {/* Sidebar */}
             <div
                 className={`fixed left-0 top-0 h-full bg-slate-900 text-white transition-all duration-300 ease-in-out z-40 ${isOpen ? "w-64" : "w-0"
@@ -78,7 +64,7 @@ const OpsSidebar = ({ user, onLogout }: OpsSidebarProps) => {
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-                    onClick={() => setIsOpen(false)}
+                    onClick={onToggle}
                 />
             )}
         </>

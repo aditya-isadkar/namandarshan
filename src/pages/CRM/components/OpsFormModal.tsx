@@ -41,6 +41,7 @@ const OpsFormModal = ({ isOpen, onClose, onSuccess, item }: OpsFormModalProps) =
         // Status & Rating
         status: "pending",
         rating: 0,
+        maybeLaterDate: "",
     });
 
     useEffect(() => {
@@ -52,22 +53,46 @@ const OpsFormModal = ({ isOpen, onClose, onSuccess, item }: OpsFormModalProps) =
                 parsedNotes = {};
             }
 
-            setFormData({
-                name: item.leadInformation?.name || "",
-                email: item.leadInformation?.email || "",
-                mobile: item.contactDetails?.mobile || "",
-                paymentDate: parsedNotes.paymentDate?.split("T")[0] || "",
-                amountReceived: parsedNotes.amountReceived || "",
-                serviceDetails: parsedNotes.serviceDetails || item.templeAndDate?.serviceType || "",
-                hotel: parsedNotes.hotelTaxi?.hotel || "",
-                taxi: parsedNotes.hotelTaxi?.taxi || "",
-                extraServices: parsedNotes.extraServices || "",
-                panditAssigned: parsedNotes.panditAssigned || item.assignedTo || "",
-                panditContact: parsedNotes.panditContact || "",
-                panditPayment: parsedNotes.panditPayment || "",
-                status: item.currentStage || "pending",
-                rating: parsedNotes.rating || 0,
-            });
+            // Check if it's a Booking object
+            const isBooking = !!item.userDetails;
+
+            if (isBooking) {
+                setFormData({
+                    name: item.userDetails?.name || "",
+                    email: item.userDetails?.email || "",
+                    mobile: item.userDetails?.mobile || "",
+                    paymentDate: parsedNotes.paymentDate?.split("T")[0] || "",
+                    amountReceived: parsedNotes.amountReceived || "",
+                    serviceDetails: parsedNotes.serviceDetails || item.serviceName || "",
+                    hotel: parsedNotes.hotelTaxi?.hotel || "",
+                    taxi: parsedNotes.hotelTaxi?.taxi || "",
+                    extraServices: parsedNotes.extraServices || "",
+                    panditAssigned: parsedNotes.panditAssigned || item.assignedTo || "",
+                    panditContact: parsedNotes.panditContact || "",
+                    panditPayment: parsedNotes.panditPayment || "",
+                    status: item.status || "pending",
+                    rating: parsedNotes.rating || 0,
+                    maybeLaterDate: item.maybeLaterDate?.split("T")[0] || "",
+                });
+            } else {
+                setFormData({
+                    name: item.leadInformation?.name || "",
+                    email: item.leadInformation?.email || "",
+                    mobile: item.contactDetails?.mobile || "",
+                    paymentDate: parsedNotes.paymentDate?.split("T")[0] || "",
+                    amountReceived: parsedNotes.amountReceived || "",
+                    serviceDetails: parsedNotes.serviceDetails || item.templeAndDate?.serviceType || "",
+                    hotel: parsedNotes.hotelTaxi?.hotel || "",
+                    taxi: parsedNotes.hotelTaxi?.taxi || "",
+                    extraServices: parsedNotes.extraServices || "",
+                    panditAssigned: parsedNotes.panditAssigned || item.assignedTo || "",
+                    panditContact: parsedNotes.panditContact || "",
+                    panditPayment: parsedNotes.panditPayment || "",
+                    status: item.currentStage || "pending",
+                    rating: parsedNotes.rating || 0,
+                    maybeLaterDate: item.maybeLaterDate?.split("T")[0] || "",
+                });
+            }
         }
     }, [item]);
 
@@ -75,43 +100,112 @@ const OpsFormModal = ({ isOpen, onClose, onSuccess, item }: OpsFormModalProps) =
         e.preventDefault();
         setIsSubmitting(true);
 
-        const payload = {
-            serviceType: "ops",
-            leadInformation: {
-                name: formData.name,
-                email: formData.email,
-                source: "crm",
+        if (formData.status === 'maybe later' && !formData.maybeLaterDate) {
+            toast({ variant: "destructive", title: "Date Required", description: "Please select a date for Maybe Later status" });
+            setIsSubmitting(false);
+            return;
+        }
+
+        const notes = JSON.stringify({
+            paymentDate: formData.paymentDate,
+            amountReceived: formData.amountReceived,
+            serviceDetails: formData.serviceDetails,
+            hotelTaxi: {
+                hotel: formData.hotel,
+                taxi: formData.taxi,
             },
-            contactDetails: {
-                mobile: formData.mobile,
-                whatsapp: formData.mobile,
-            },
-            templeAndDate: {
-                temple: "Fulfilment",
-                preferredDate: formData.paymentDate || new Date().toISOString(),
-                serviceType: formData.serviceDetails,
-            },
-            currentStage: formData.status,
-            assignedTo: formData.panditAssigned,
-            notes: JSON.stringify({
-                paymentDate: formData.paymentDate,
-                amountReceived: formData.amountReceived,
-                serviceDetails: formData.serviceDetails,
-                hotelTaxi: {
-                    hotel: formData.hotel,
-                    taxi: formData.taxi,
+            extraServices: formData.extraServices,
+            panditAssigned: formData.panditAssigned,
+            panditContact: formData.panditContact,
+            panditPayment: formData.panditPayment,
+            rating: formData.rating,
+        });
+
+        const isBooking = item && !!item.userDetails;
+        let url = "/api/crm/leads";
+        let method = "POST";
+        let payload: any = {};
+
+        if (isBooking) {
+            url = `/api/crm/bookings/${item._id}`;
+            method = "PUT";
+            payload = {
+                type: item.type || "ops",
+                // We keep original type or default to ops? 
+                // Ops usually deals with existing bookings, so keeping type is safer.
+
+                // Construct Booking Payload
+                serviceName: formData.serviceDetails || item.serviceName,
+                // If service name changes? Ops table uses item.serviceName.
+
+                userDetails: {
+                    name: formData.name,
+                    email: formData.email,
+                    mobile: formData.mobile,
+                    whatsapp: formData.mobile,
                 },
-                extraServices: formData.extraServices,
-                panditAssigned: formData.panditAssigned,
-                panditContact: formData.panditContact,
-                panditPayment: formData.panditPayment,
-                rating: formData.rating,
-            }),
-        };
+                bookingDetails: {
+                    ...item.bookingDetails,
+                    // Ops might not change core booking details but adds notes/status/assignedTo
+                },
+                status: formData.status,
+                assignedTo: formData.panditAssigned, // Ops uses pandit as assigned?
+                notes: notes, // Store fulfillment details in notes
+                maybeLaterDate: formData.status === 'maybe later' ? formData.maybeLaterDate : undefined
+            };
+
+        } else if (item) {
+            url = `/api/crm/leads/${item.leadId}`;
+            method = "PUT";
+            payload = {
+                serviceType: "ops",
+                leadInformation: {
+                    name: formData.name,
+                    email: formData.email,
+                    source: "crm",
+                },
+                contactDetails: {
+                    mobile: formData.mobile,
+                    whatsapp: formData.mobile,
+                },
+                templeAndDate: {
+                    temple: "Fulfilment",
+                    preferredDate: formData.paymentDate || new Date().toISOString(),
+                    serviceType: formData.serviceDetails,
+                },
+                currentStage: formData.status,
+                assignedTo: formData.panditAssigned,
+                notes: notes,
+                maybeLaterDate: formData.status === 'maybe later' ? formData.maybeLaterDate : undefined
+            };
+        } else {
+            // Create New (Ops usually acts on existing, but if Manual Add?)
+            url = "/api/crm/leads"; // Or bookings?
+            method = "POST";
+            payload = {
+                serviceType: "ops",
+                leadInformation: {
+                    name: formData.name,
+                    email: formData.email,
+                    source: "crm",
+                },
+                contactDetails: {
+                    mobile: formData.mobile,
+                    whatsapp: formData.mobile,
+                },
+                templeAndDate: {
+                    temple: "Fulfilment",
+                    preferredDate: formData.paymentDate || new Date().toISOString(),
+                    serviceType: formData.serviceDetails,
+                },
+                currentStage: formData.status,
+                assignedTo: formData.panditAssigned,
+                notes: notes,
+                maybeLaterDate: formData.status === 'maybe later' ? formData.maybeLaterDate : undefined
+            };
+        }
 
         try {
-            const url = item ? `/api/crm/leads/${item.leadId}` : "/api/crm/leads";
-            const method = item ? "PUT" : "POST";
             const response = await fetch(getApiUrl(url), {
                 method,
                 headers: { "Content-Type": "application/json" },
@@ -306,10 +400,25 @@ const OpsFormModal = ({ isOpen, onClose, onSuccess, item }: OpsFormModalProps) =
                                         <SelectItem value="confirmed">Confirmed</SelectItem>
                                         <SelectItem value="in-progress">In Progress</SelectItem>
                                         <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
                                         <SelectItem value="cancelled">Cancelled</SelectItem>
+                                        <SelectItem value="maybe later">Maybe Later</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
+                            {formData.status === 'maybe later' && (
+                                <div>
+                                    <Label htmlFor="maybeLaterDate">Follow-up Date</Label>
+                                    <Input
+                                        id="maybeLaterDate"
+                                        type="date"
+                                        value={formData.maybeLaterDate}
+                                        onChange={(e) => setFormData({ ...formData, maybeLaterDate: e.target.value })}
+                                        className="dark:bg-background dark:border-input"
+                                        required
+                                    />
+                                </div>
+                            )}
                             <div>
                                 <Label>Rating</Label>
                                 <div className="flex items-center gap-2 mt-2">

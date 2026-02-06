@@ -5,6 +5,7 @@ import { ArrowLeft, TrendingUp, Users, DollarSign, Clock, Award } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import CRMHeader from "./components/CRMHeader";
 
 const TeamStats = () => {
     const { toast } = useToast();
@@ -47,25 +48,27 @@ const TeamStats = () => {
     }, [timePeriod]);
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link to="/crm/dashboard">
-                            <Button variant="ghost" className="text-white hover:bg-blue-700">
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Back
-                            </Button>
-                        </Link>
-                        <div>
-                            <h1 className="text-3xl font-bold">📊 Team Statistics</h1>
-                            <p className="text-blue-100">Performance metrics and analytics</p>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+            <CRMHeader />
+
+            <div className="p-6">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6 rounded-lg mb-6 shadow-md">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Link to="/crm/dashboard">
+                                <Button variant="ghost" className="text-white hover:bg-blue-700">
+                                    <ArrowLeft className="w-4 h-4 mr-2" />
+                                    Back
+                                </Button>
+                            </Link>
+                            <div>
+                                <h1 className="text-3xl font-bold">📊 Team Statistics</h1>
+                                <p className="text-blue-100">Performance metrics and analytics</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="p-6">
                 {/* Time Period Selector */}
                 <div className="bg-white rounded-lg shadow p-4 mb-6">
                     <div className="flex items-center justify-between">
