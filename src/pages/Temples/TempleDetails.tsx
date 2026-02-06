@@ -214,8 +214,8 @@ const TempleDetails = () => {
                                         Historical background and Architectural splendor
                                     </h2>
                                     <div className="clearfix">
-                                        {temple.historyArchitectureImage && (
-                                            <div className="md:w-1/3 w-full md:float-right md:ml-8 mb-6">
+                                        {temple.historyArchitectureImage && temple.historyArchitectureImage.trim() !== "" && (
+                                            <div className="md:float-right md:w-1/3 w-full md:ml-8 mb-6">
                                                 <img
                                                     src={temple.historyArchitectureImage}
                                                     alt="Historical Architecture"
@@ -223,7 +223,7 @@ const TempleDetails = () => {
                                                 />
                                             </div>
                                         )}
-                                        <div className="text-lg leading-relaxed text-muted-foreground text-justify">
+                                        <div className="text-lg leading-relaxed text-muted-foreground">
                                             {temple.historyArchitectureDesc}
                                         </div>
                                     </div>
@@ -236,8 +236,8 @@ const TempleDetails = () => {
                                         Religious Significance
                                     </h2>
                                     <div className="clearfix">
-                                        {temple.religiousSignificanceImage && (
-                                            <div className="md:w-1/3 w-full md:float-right md:ml-8 mb-6">
+                                        {temple.religiousSignificanceImage && temple.religiousSignificanceImage.trim() !== "" && (
+                                            <div className="md:float-right md:w-1/3 w-full md:ml-8 mb-6">
                                                 <img
                                                     src={temple.religiousSignificanceImage}
                                                     alt="Religious Significance"
@@ -245,7 +245,7 @@ const TempleDetails = () => {
                                                 />
                                             </div>
                                         )}
-                                        <div className="text-lg leading-relaxed text-muted-foreground text-justify">
+                                        <div className="text-lg leading-relaxed text-muted-foreground">
                                             {temple.religiousSignificanceDesc}
                                         </div>
                                     </div>
@@ -257,9 +257,12 @@ const TempleDetails = () => {
                                     <h2 className="font-display text-3xl font-bold text-center mb-8 text-orange-600 italic">
                                         Festival and Celebrations
                                     </h2>
-                                    <div className="clearfix">
+                                    <div className="flex flex-col md:flex-row-reverse gap-8 items-start">
+                                        <div className="flex-1 text-lg leading-relaxed text-muted-foreground">
+                                            {temple.festivalCelebrationsDesc}
+                                        </div>
                                         {temple.festivalCelebrationsImage && (
-                                            <div className="md:w-1/3 w-full md:float-right md:ml-8 mb-6">
+                                            <div className="md:w-1/3 w-full shrink-0">
                                                 <img
                                                     src={temple.festivalCelebrationsImage}
                                                     alt="Festival and Celebrations"
@@ -267,9 +270,6 @@ const TempleDetails = () => {
                                                 />
                                             </div>
                                         )}
-                                        <div className="text-lg leading-relaxed text-muted-foreground text-justify">
-                                            {temple.festivalCelebrationsDesc}
-                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -331,8 +331,6 @@ const TempleDetails = () => {
                         >
                             <h3 className="font-display text-2xl font-bold mb-6">Visitor Information</h3>
 
-
-
                             {temple.liveDarshanUrl && (
                                 <a
                                     href={temple.liveDarshanUrl}
@@ -361,12 +359,30 @@ const TempleDetails = () => {
                                     </div>
                                 )}
 
-                                {temple.darshanTimings && (
+                                {((temple.darshanSchedule && temple.darshanSchedule.length > 0) || temple.darshanTimings) && (
                                     <div className="flex items-start gap-4 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20">
                                         <Clock className="w-5 h-5 text-primary mt-1" />
-                                        <div>
-                                            <p className="font-semibold">Darshan Timings:</p>
-                                            <p className="text-sm text-muted-foreground">{temple.darshanTimings}</p>
+                                        <div className="w-full">
+                                            <p className="font-semibold mb-1">Darshan Timings:</p>
+
+                                            {/* Structured Schedule */}
+                                            {temple.darshanSchedule && temple.darshanSchedule.length > 0 ? (
+                                                <div className="space-y-3 mt-1">
+                                                    {temple.darshanSchedule.map((slot: any, index: number) => (
+                                                        <div key={index} className="text-sm">
+                                                            <span className="font-medium text-gray-900 block">{slot.label}</span>
+                                                            <span className="text-muted-foreground">{slot.time}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                /* Legacy Text Schedule */
+                                                <div className="text-sm text-muted-foreground space-y-1">
+                                                    {temple.darshanTimings && temple.darshanTimings.split('\n').map((line: string, index: number) => (
+                                                        line.trim() && <p key={index}>{line}</p>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -397,18 +413,9 @@ const TempleDetails = () => {
                                         <div className="w-full">
                                             <p className="font-semibold mb-1">Connectivity:</p>
                                             <div className="text-sm text-muted-foreground space-y-2">
-                                                {temple.connectivity.split('\n').filter((l: string) => l.trim()).map((line: string, index: number) => {
-                                                    const parts = line.split(':');
-                                                    if (parts.length > 1) {
-                                                        return (
-                                                            <p key={index}>
-                                                                <span className="font-bold text-gray-900">{parts[0]}:</span>
-                                                                {parts.slice(1).join(':')}
-                                                            </p>
-                                                        );
-                                                    }
-                                                    return <p key={index}>{line}</p>;
-                                                })}
+                                                {temple.connectivity.split('\n').map((line: string, index: number) => (
+                                                    line.trim() && <p key={index}>{line}</p>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>

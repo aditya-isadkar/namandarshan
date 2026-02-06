@@ -29,6 +29,7 @@ const TempleForm = () => {
         address: "",
         notableEvents: "",
         connectivity: "",
+        darshanSchedule: [] as { label: string; time: string }[],
         seoTitle: "",
         seoDescription: "",
         seoKeywords: ""
@@ -69,6 +70,7 @@ const TempleForm = () => {
                 address: temple.address || "",
                 notableEvents: temple.notableEvents || "",
                 connectivity: temple.connectivity || "",
+                darshanSchedule: temple.darshanSchedule || [],
                 seoTitle: temple.seoTitle || "",
                 seoDescription: temple.seoDescription || "",
                 seoKeywords: temple.seoKeywords || ""
@@ -96,6 +98,22 @@ const TempleForm = () => {
     const removeFaq = (index: number) => {
         const newFaqs = formData.faqs.filter((_, i) => i !== index);
         setFormData({ ...formData, faqs: newFaqs });
+    };
+
+    // Darshan Schedule Management
+    const handleScheduleChange = (index: number, field: "label" | "time", value: string) => {
+        const newSchedule = [...formData.darshanSchedule];
+        newSchedule[index][field] = value;
+        setFormData({ ...formData, darshanSchedule: newSchedule });
+    };
+
+    const addScheduleRow = () => {
+        setFormData({ ...formData, darshanSchedule: [...formData.darshanSchedule, { label: "", time: "" }] });
+    };
+
+    const removeScheduleRow = (index: number) => {
+        const newSchedule = formData.darshanSchedule.filter((_, i) => i !== index);
+        setFormData({ ...formData, darshanSchedule: newSchedule });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -317,13 +335,41 @@ const TempleForm = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-2">Darshan Timings</label>
-                            <Input
+                            <label className="block text-sm font-medium mb-2">Darshan Timings (Legacy Text)</label>
+                            <Textarea
                                 name="darshanTimings"
                                 value={formData.darshanTimings}
                                 onChange={handleChange}
-                                placeholder="06:00 AM - 09:00 PM"
+                                rows={2}
+                                placeholder="06:00 AM - 12:00 PM&#10;04:00 PM - 09:00 PM"
                             />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium mb-2">Detailed Darshan Schedule (New)</label>
+                            <div className="space-y-3">
+                                {formData.darshanSchedule.map((row, index) => (
+                                    <div key={index} className="flex gap-2 items-center">
+                                        <Input
+                                            placeholder="Label (e.g. Morning)"
+                                            value={row.label}
+                                            onChange={(e) => handleScheduleChange(index, "label", e.target.value)}
+                                            className="flex-1"
+                                        />
+                                        <Input
+                                            placeholder="Time (e.g. 6AM - 12PM)"
+                                            value={row.time}
+                                            onChange={(e) => handleScheduleChange(index, "time", e.target.value)}
+                                            className="flex-1"
+                                        />
+                                        <Button type="button" variant="destructive" size="icon" onClick={() => removeScheduleRow(index)}>
+                                            <span className="text-lg">×</span>
+                                        </Button>
+                                    </div>
+                                ))}
+                                <Button type="button" variant="outline" className="w-full" onClick={addScheduleRow}>
+                                    + Add Schedule Row
+                                </Button>
+                            </div>
                         </div>
                         <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-2">Address</label>
@@ -399,8 +445,8 @@ const TempleForm = () => {
                         {loading ? "Saving..." : "Save Temple"}
                     </Button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };
 
