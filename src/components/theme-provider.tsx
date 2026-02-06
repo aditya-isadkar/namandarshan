@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 type Theme = "dark" | "light" | "smart";
 
@@ -29,11 +30,24 @@ export function ThemeProvider({
         () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
     );
 
+    const location = useLocation();
+
     useEffect(() => {
         const root = window.document.documentElement;
 
         root.classList.remove("light", "dark");
 
+        // Check if current path starts with /crm or /ops (or is a sub-route)
+        // Adjust the condition as per your "CRM & OPS" requirements
+        const isCrmOrOps = location.pathname.startsWith("/crm") || location.pathname.startsWith("/ops");
+
+        if (!isCrmOrOps) {
+            // Main Site: ALWAYS Light Mode
+            root.classList.add("light");
+            return; // Stop here, ignore 'theme' state
+        }
+
+        // If CRM/Ops, respect the 'theme' state
         if (theme === "smart") {
             const checkTime = () => {
                 const hour = new Date().getHours();
@@ -50,7 +64,7 @@ export function ThemeProvider({
         } else {
             root.classList.add(theme);
         }
-    }, [theme]);
+    }, [theme, location.pathname]);
 
     const value = {
         theme,

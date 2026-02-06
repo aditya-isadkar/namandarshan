@@ -93,11 +93,11 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider defaultTheme="smart" storageKey="vite-ui-theme">
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+        <BrowserRouter>
+          <ThemeProvider defaultTheme="smart" storageKey="vite-ui-theme">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
               <ScrollToTop />
               <FloatingActionButtons />
               <Routes>
@@ -199,19 +199,11 @@ const App = () => (
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="*" element={<NotFound />} />
               </Routes >
-            </BrowserRouter >
-          </TooltipProvider >
-        </ThemeProvider >
+            </TooltipProvider >
+          </ThemeProvider >
+        </BrowserRouter >
       </AuthProvider >
     </QueryClientProvider >
   </HelmetProvider >
-
-
-
-
-
-
-
 );
-
 export default App;
