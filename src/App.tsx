@@ -170,8 +170,10 @@ const App = () => (
                 <Route path="/admin/chadhava/edit/:id" element={<ChadhavaForm />} />
 
 
+                <Route path="/admin/login" element={<AdminLogin />} />
+
                 {/* Admin Routes - Protected */}
-                <Route element={<ProtectedRoute />}>
+                <Route element={<ProtectedRoute authType="admin" redirectPath="/admin/login" />}>
                   <Route path="/admin" element={<TempleList />} />
                   <Route path="/admin/temples" element={<TempleList />} />
                   <Route path="/admin/temples/new" element={<TempleForm />} />
